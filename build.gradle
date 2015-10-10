@@ -4,8 +4,12 @@ version '0.1-SNAPSHOT'
 apply plugin: 'groovy'
 apply plugin: 'java'
 apply plugin: 'idea'
+apply plugin: 'application'
 
 sourceCompatibility = 1.5
+
+// The dummy implementation for quick testing
+mainClassName = "io.github.kitarek.elasthttpd.DefaultHttpServer"
 
 repositories {
 	mavenCentral()
@@ -19,6 +23,7 @@ configurations {
 dependencies {
 	compile 'org.apache.httpcomponents:httpcore:4.4.3'
 	compile 'org.slf4j:slf4j-api:1.7.2'
+	compile 'org.apache.commons:commons-lang3:3.1'
 
 	runtime 'ch.qos.logback:logback-classic:1.0.9'
 	runtime 'org.slf4j:jcl-over-slf4j:1.7.2'
