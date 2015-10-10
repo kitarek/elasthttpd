@@ -12,3 +12,5 @@ gradle-app.setting
 
 # Ignore IntelliJ project files
 *.iml
+*.ipr
+*.iws
