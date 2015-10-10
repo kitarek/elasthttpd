@@ -19,26 +19,28 @@ package io.github.kitarek.elasthttpd.builder;
 
 import io.github.kitarek.elasthttpd.ElastHttpDBuilder;
 import io.github.kitarek.elasthttpd.server.HttpServer;
+import io.github.kitarek.elasthttpd.server.core.HttpCoreBasedServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class FluentElastHttpDBuilder implements ElastHttpDBuilder {
 
-	Logger logger = LoggerFactory.getLogger(FluentElastHttpDBuilder.class);
+	public static Logger logger = LoggerFactory.getLogger(FluentElastHttpDBuilder.class);
+	private HttpServer server;
+
+	public FluentElastHttpDBuilder() {
+		server = new HttpCoreBasedServer();
+	}
 
 	public ElastHttpDBuilder serverInfo(String serverInfoLine) {
 		return this;
 	}
 
 	public HttpServer createAndReturn() {
-		return new HttpServer() {};
+		return server;
 	}
 
 	public void run() {
-		try {
-			Thread.sleep(10000);
-		} catch (InterruptedException e) {
-			logger.warn("Server has been interrupted");
-		}
+		server.start();
 	}
 }
