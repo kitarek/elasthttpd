@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+// TODO AK unit test coverage
 public class HttpCoreBasedServer implements io.github.kitarek.elasthttpd.server.HttpServer {
 
 	public Logger logger = LoggerFactory.getLogger(HttpCoreBasedServer.class);

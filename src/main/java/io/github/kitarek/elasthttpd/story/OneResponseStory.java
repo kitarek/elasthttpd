@@ -37,6 +37,7 @@ import static org.apache.http.HttpStatus.SC_METHOD_NOT_ALLOWED;
 import static org.apache.http.HttpStatus.SC_NOT_IMPLEMENTED;
 import static org.apache.http.HttpStatus.SC_OK;
 
+// TODO AK unit tests coverage
 public class OneResponseStory implements HttpRequestHandler {
 
 	public static final ContentType DEFAULT_CONTENT_TYPE = ContentType.create("text/html", "UTF-8");

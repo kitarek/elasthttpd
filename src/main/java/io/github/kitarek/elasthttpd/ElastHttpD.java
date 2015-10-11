@@ -19,6 +19,7 @@ package io.github.kitarek.elasthttpd;
 
 import io.github.kitarek.elasthttpd.builder.FluentElastHttpDBuilder;
 
+// TODO AK unit test coverage
 public class ElastHttpD {
 	public static ElastHttpDBuilder startBuilding() {
 		return new FluentElastHttpDBuilder();
