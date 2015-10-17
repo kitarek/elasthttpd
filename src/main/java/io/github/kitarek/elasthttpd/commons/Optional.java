@@ -17,7 +17,7 @@
 
 package io.github.kitarek.elasthttpd.commons;
 
-import org.apache.commons.lang3.Validate;
+import static org.apache.commons.lang3.Validate.notNull;
 
 /**
  * Optional type inspired on Java 8 Optional that address null-reference problem. In case of direct access (it is
@@ -41,8 +41,7 @@ public class Optional<T> {
 	}
 
 	public static <T> Optional<T> present(T value) {
-		Validate.notNull(value, "The value for 'present(value)' method is mandatory and must be present -- not null!");
-		return optional(value);
+		return optional(notNull(value, "The value for 'present(value)' method is mandatory and must be present -- not null!"));
 	}
 
 	public static <T> Optional<T> optional(T value) {
@@ -58,22 +57,19 @@ public class Optional<T> {
 	}
 
 	public T get() {
-		Validate.notNull(reference, "Cannot access optional value that is not present. Check first for presence");
-		return reference;
+		return notNull(reference, "Cannot access optional value that is not present. Check first for presence");
 	}
 
 	public void map(OptionalMapper<T> mapper) {
-		if (isPresent()) {
+		if (isPresent())
 			mapper.present(reference);
-		}
 	}
 
 	public void dispatch(OptionalDispatcher<T> dispatcher) {
-		if (isPresent()) {
+		if (isPresent())
 			dispatcher.present(reference);
-		} else {
+		else
 			dispatcher.notPresent();
-		}
 	}
 
 }
