@@ -72,10 +72,10 @@ class SynchronousStoppableHttpConnectionListenerSpec extends Specification {
 
 	def 'Listener cannot be started when socket is null'() {
 		given:
-		def ConsumerExecutor executor = Mock()
-		def HttpConnectionConsumer consumer = Mock()
-		def listener = new SynchronousStoppableHttpConnectionListener(executor, consumer)
-		def ListeningSocket socket = null
+			def ConsumerExecutor executor = Mock()
+			def HttpConnectionConsumer consumer = Mock()
+			def listener = new SynchronousStoppableHttpConnectionListener(executor, consumer)
+			def ListeningSocket socket = null
 
 		when:
 			listener.listenAndPassNewConnections(socket)
