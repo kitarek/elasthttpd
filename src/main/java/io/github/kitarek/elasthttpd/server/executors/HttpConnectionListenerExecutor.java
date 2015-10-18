@@ -23,6 +23,7 @@ import io.github.kitarek.elasthttpd.server.networking.ListeningSocket;
 import java.util.concurrent.ExecutorService;
 
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
+import static org.apache.commons.lang3.Validate.notNull;
 
 // TODO add termination handling and waiting
 public class HttpConnectionListenerExecutor implements ListenerExecutor {
@@ -32,7 +33,7 @@ public class HttpConnectionListenerExecutor implements ListenerExecutor {
 	public void execute(final HttpConnectionListener listener, final ListeningSocket socket) {
 		oneThreadExecutor.execute(new Runnable() {
 			public void run() {
-				listener.listenAndPassNewConnections(socket);
+				listener.listenAndPassNewConnections(notNull(socket, "Passed socket cannot be null!"));
 			}
 		});
 	}

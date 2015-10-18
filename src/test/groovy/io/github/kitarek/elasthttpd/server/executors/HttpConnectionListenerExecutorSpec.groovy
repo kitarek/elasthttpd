@@ -46,4 +46,23 @@ class HttpConnectionListenerExecutorSpec extends Specification {
 		then:
 			1 * listener.listenAndPassNewConnections(socket)
 	}
+
+	def 'Executor does not invokes listener when socket is null'() {
+		given:
+			def listener = Mock(HttpConnectionListener)
+		and:
+			def ExecutorService executorServiceStub = Stub()
+			executorUnderTest.oneThreadExecutor = executorServiceStub
+		and:
+			executorServiceStub.execute( { it instanceof Runnable} ) >> { runnableArgs -> runnableArgs[0].run() }
+
+		when:
+			executorUnderTest.execute(listener, null)
+
+		then:
+			0 * listener.listenAndPassNewConnections(_)
+		and:
+			thrown(NullPointerException)
+	}
+
 }
