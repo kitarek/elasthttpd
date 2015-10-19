@@ -19,6 +19,8 @@ package io.github.kitarek.elasthttpd.server.networking
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import static io.github.kitarek.elasthttpd.server.networking.AddressAndPortReusePolicy.DO_NOT_USE_PORT_AND_IP_ADDRESS_IF_SOME_PACKETS_WERE_NOT_DELIVERED_YET
+import static io.github.kitarek.elasthttpd.server.networking.AddressAndPortReusePolicy.REUSE_PORT_AND_IP_ADDRESS_RISKING_DELIVERY_OF_OLD_PACKETS
 import static io.github.kitarek.elasthttpd.server.networking.KeepAliveMode.ACTIVE_AND_SEND_KEEP_ALIVE_PACKETS
 import static io.github.kitarek.elasthttpd.server.networking.KeepAliveMode.INACTIVE_DONT_SEND_KEEP_ALIVE_PACKETS
 import static io.github.kitarek.elasthttpd.server.networking.SmallerPacketsSendingPolicy.SEND_SMALLER_PACKETS_INSTANTLY
@@ -94,7 +96,7 @@ class BasicValidatedSocketConfigurationSpec extends Specification {
 
 	def 'Can create socket configuration providing queue size and portNumber higher than 0 and any other setting as null which means system default will be chosen'() {
 		when:
-			new BasicValidatedSocketConfiguration(new InetAddress(), 1, queueSize, null, null, null, null, null);
+			new BasicValidatedSocketConfiguration(new InetAddress(), 1, queueSize, null, null, null, null, null, null);
 
 		then:
 			notThrown()
@@ -107,7 +109,7 @@ class BasicValidatedSocketConfigurationSpec extends Specification {
 	def 'Cannot create socket configuration providing correct queue size and portNumber, but not receive buffer size'() {
 		when:
 			new BasicValidatedSocketConfiguration(new InetAddress(), 1, 1, bufferSize,
-					null, null, null, null);
+					null, null, null, null, null);
 
 		then:
 			thrown(IllegalArgumentException)
@@ -119,7 +121,7 @@ class BasicValidatedSocketConfigurationSpec extends Specification {
 	@Unroll
 	def 'Cannot create socket configuration providing correct queue size and portNumber, but not send buffer size'() {
 		when:
-		new BasicValidatedSocketConfiguration(new InetAddress(), 1, 1, null, bufferSize, null, null, null);
+		new BasicValidatedSocketConfiguration(new InetAddress(), 1, 1, null, bufferSize, null, null, null, null);
 
 		then:
 			thrown(IllegalArgumentException)
@@ -132,7 +134,7 @@ class BasicValidatedSocketConfigurationSpec extends Specification {
 	def 'Can create socket configuration providing correct queue size and portNumber, but not receive buffer size'() {
 		when:
 			new BasicValidatedSocketConfiguration(new InetAddress(), 1, 1, bufferSize,
-				null, null, null, null);
+				null, null, null, null, null);
 
 		then:
 			notThrown()
@@ -144,7 +146,7 @@ class BasicValidatedSocketConfigurationSpec extends Specification {
 	@Unroll
 	def 'Can create socket configuration providing correct queue size and portNumber, but not send buffer size'() {
 		when:
-			new BasicValidatedSocketConfiguration(new InetAddress(), 1, 1, null, bufferSize, null, null, null);
+			new BasicValidatedSocketConfiguration(new InetAddress(), 1, 1, null, bufferSize, null, null, null, null);
 
 		then:
 			notThrown()
@@ -156,7 +158,7 @@ class BasicValidatedSocketConfigurationSpec extends Specification {
 	@Unroll
 	def 'Cannot create socket configuration providing correct queue size and portNumber, but not receive/send buffer sizes'() {
 		when:
-			new BasicValidatedSocketConfiguration(new InetAddress(), 1, 1, bufferSize, bufferSize, null, null, null);
+			new BasicValidatedSocketConfiguration(new InetAddress(), 1, 1, bufferSize, bufferSize, null, null, null, null);
 
 		then:
 			thrown(IllegalArgumentException)
@@ -168,7 +170,7 @@ class BasicValidatedSocketConfigurationSpec extends Specification {
 	@Unroll
 	def 'Cannot create socket configuration providing correct queue size and portNumber, but not timeout'() {
 		when:
-			new BasicValidatedSocketConfiguration(new InetAddress(), 1, 1, null, null, null, null, timeout);
+			new BasicValidatedSocketConfiguration(new InetAddress(), 1, 1, null, null, null, null, timeout, null);
 
 		then:
 		thrown(IllegalArgumentException)
@@ -180,7 +182,7 @@ class BasicValidatedSocketConfigurationSpec extends Specification {
 	@Unroll
 	def 'Cannot create socket configuration providing correct queue size and portNumber, but not receive/send buffers and timeout'() {
 		when:
-			new BasicValidatedSocketConfiguration(new InetAddress(), 1, 1, bufferSize, bufferSize, null, null, timeout);
+			new BasicValidatedSocketConfiguration(new InetAddress(), 1, 1, bufferSize, bufferSize, null, null, timeout, null);
 
 		then:
 			thrown(IllegalArgumentException)
@@ -196,17 +198,31 @@ class BasicValidatedSocketConfigurationSpec extends Specification {
 			def address = new InetAddress()
 		when:
 			def SocketConfiguration c = new BasicValidatedSocketConfiguration(address, 1, 1, bufferSize,
-					bufferSize, ACTIVE_AND_SEND_KEEP_ALIVE_PACKETS, SEND_SMALLER_PACKETS_INSTANTLY, timeout);
+					bufferSize, ACTIVE_AND_SEND_KEEP_ALIVE_PACKETS, SEND_SMALLER_PACKETS_INSTANTLY, timeout,
+					DO_NOT_USE_PORT_AND_IP_ADDRESS_IF_SOME_PACKETS_WERE_NOT_DELIVERED_YET);
 
 		then:
 			c.connectionsToAcceptQueueSize == 1
-			c.keepAlivePacketsMode.get() == ACTIVE_AND_SEND_KEEP_ALIVE_PACKETS
-			c.socketTimeoutInMiliseconds.get() == timeout
-			c.socketReceiveBufferSizeInBytes.get() == bufferSize
-			c.socketSendBufferSizeInBytes.get() == bufferSize
-			c.smallerPacketsSendingPolicy.get() == SEND_SMALLER_PACKETS_INSTANTLY
 			c.listeningPort == 1
 			c.listeningAddress == address
+		and:
+			c.keepAlivePacketsMode.present
+			c.keepAlivePacketsMode.get() == ACTIVE_AND_SEND_KEEP_ALIVE_PACKETS
+		and:
+			c.socketTimeoutInMiliseconds.present
+			c.socketTimeoutInMiliseconds.get() == timeout
+		and:
+			c.socketReceiveBufferSizeInBytes.present
+			c.socketReceiveBufferSizeInBytes.get() == bufferSize
+		and:
+			c.socketSendBufferSizeInBytes.present
+			c.socketSendBufferSizeInBytes.get() == bufferSize
+		and:
+			c.smallerPacketsSendingPolicy.present
+			c.smallerPacketsSendingPolicy.get() == SEND_SMALLER_PACKETS_INSTANTLY
+		and:
+			c.addressAndPortReusePolicy.present
+			c.addressAndPortReusePolicy.get() == DO_NOT_USE_PORT_AND_IP_ADDRESS_IF_SOME_PACKETS_WERE_NOT_DELIVERED_YET
 
 		where:
 			bufferSize << [1, 100, 200]
@@ -219,17 +235,27 @@ class BasicValidatedSocketConfigurationSpec extends Specification {
 			def address = new InetAddress()
 		when:
 			def SocketConfiguration c = new BasicValidatedSocketConfiguration(address, 1, 1, bufferSize,
-				bufferSize, null, null, timeout);
+				bufferSize, null, null, timeout, null);
 
 		then:
 			c.connectionsToAcceptQueueSize == 1
-			c.keepAlivePacketsMode.notPresent
-			c.socketTimeoutInMiliseconds.get() == timeout
-			c.socketReceiveBufferSizeInBytes.get() == bufferSize
-			c.socketSendBufferSizeInBytes.get() == bufferSize
-			c.smallerPacketsSendingPolicy.notPresent
 			c.listeningPort == 1
 			c.listeningAddress == address
+		and:
+			c.keepAlivePacketsMode.notPresent
+		and:
+			c.socketTimeoutInMiliseconds.present
+			c.socketTimeoutInMiliseconds.get() == timeout
+		and:
+			c.socketReceiveBufferSizeInBytes.present
+			c.socketReceiveBufferSizeInBytes.get() == bufferSize
+		and:
+			c.socketSendBufferSizeInBytes.present
+			c.socketSendBufferSizeInBytes.get() == bufferSize
+		and:
+			c.smallerPacketsSendingPolicy.notPresent
+		and:
+			c.addressAndPortReusePolicy.notPresent
 
 		where:
 			bufferSize << [1, 100, 200]
@@ -243,17 +269,27 @@ class BasicValidatedSocketConfigurationSpec extends Specification {
 		when:
 			def SocketConfiguration c = new BasicValidatedSocketConfiguration(address, 1, 1, null,
 				null, INACTIVE_DONT_SEND_KEEP_ALIVE_PACKETS, SEND_SMALLER_PACKETS_LATER_WHEN_OPTIMAL_CONDITIONS,
-					null);
+					null, REUSE_PORT_AND_IP_ADDRESS_RISKING_DELIVERY_OF_OLD_PACKETS);
 
 		then:
 			c.connectionsToAcceptQueueSize == 1
-			c.keepAlivePacketsMode.get() == INACTIVE_DONT_SEND_KEEP_ALIVE_PACKETS
-			c.socketTimeoutInMiliseconds.notPresent
-			c.socketReceiveBufferSizeInBytes.notPresent
-			c.socketSendBufferSizeInBytes.notPresent
-			c.smallerPacketsSendingPolicy.get() == SEND_SMALLER_PACKETS_LATER_WHEN_OPTIMAL_CONDITIONS
 			c.listeningPort == 1
 			c.listeningAddress == address
+		and:
+			c.keepAlivePacketsMode.present
+			c.keepAlivePacketsMode.get() == INACTIVE_DONT_SEND_KEEP_ALIVE_PACKETS
+		and:
+			c.socketTimeoutInMiliseconds.notPresent
+		and:
+			c.socketReceiveBufferSizeInBytes.notPresent
+		and:
+			c.socketSendBufferSizeInBytes.notPresent
+		and:
+			c.smallerPacketsSendingPolicy.present
+			c.smallerPacketsSendingPolicy.get() == SEND_SMALLER_PACKETS_LATER_WHEN_OPTIMAL_CONDITIONS
+		and:
+			c.addressAndPortReusePolicy.present
+			c.addressAndPortReusePolicy.get() == REUSE_PORT_AND_IP_ADDRESS_RISKING_DELIVERY_OF_OLD_PACKETS
 	}
 
 }

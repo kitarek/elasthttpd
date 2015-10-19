@@ -39,6 +39,7 @@ public class BasicValidatedSocketConfiguration implements SocketConfiguration {
 	private Integer socketSendBufferSizeInBytes;
 	private KeepAliveMode keepAlivePacketsMode;
 	private SmallerPacketsSendingPolicy smallerPacketsSendingPolicy;
+	private AddressAndPortReusePolicy addressAndPortReusePolicy;
 	private Integer socketTimeoutInMiliseconds;
 
 	public BasicValidatedSocketConfiguration(InetAddress listeningAddress, int listeningPort) {
@@ -61,7 +62,8 @@ public class BasicValidatedSocketConfiguration implements SocketConfiguration {
 											 Integer socketReceiveBufferSizeInBytes, Integer socketSendBufferSizeInBytes,
 											 KeepAliveMode keepAlivePacketsMode,
 											 SmallerPacketsSendingPolicy smallerPacketsSendingPolicy,
-											 Integer socketTimeoutInMiliseconds) {
+											 Integer socketTimeoutInMiliseconds,
+											 AddressAndPortReusePolicy addressAndPortReusePolicy) {
 		this(listeningAddress, listeningPort, connectionsToAcceptQueueSize);
 
 		if (socketReceiveBufferSizeInBytes != null)
@@ -78,6 +80,7 @@ public class BasicValidatedSocketConfiguration implements SocketConfiguration {
 
 		this.keepAlivePacketsMode = keepAlivePacketsMode;
 		this.smallerPacketsSendingPolicy = smallerPacketsSendingPolicy;
+		this.addressAndPortReusePolicy = addressAndPortReusePolicy;
 	}
 
 	public InetAddress getListeningAddress() {
@@ -110,5 +113,9 @@ public class BasicValidatedSocketConfiguration implements SocketConfiguration {
 
 	public Optional<Integer> getSocketTimeoutInMiliseconds() {
 		return optional(socketTimeoutInMiliseconds);
+	}
+
+	public Optional<AddressAndPortReusePolicy> getAddressAndPortReusePolicy() {
+		return optional(addressAndPortReusePolicy);
 	}
 }

@@ -84,4 +84,12 @@ public interface SocketConfiguration {
 	 * @return number of miliseconds if present
 	 */
 	Optional<Integer> getSocketTimeoutInMiliseconds();
+
+	/**
+	 * Get policy for quick or safe socket binding. Otherwise if value is
+	 * not provided the system default will be used for socket.
+	 *
+	 * @return chosen policy for binding server sockets (if present)
+	 */
+	Optional<AddressAndPortReusePolicy> getAddressAndPortReusePolicy();
 }
