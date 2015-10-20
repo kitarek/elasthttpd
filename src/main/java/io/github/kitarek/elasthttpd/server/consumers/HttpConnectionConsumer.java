@@ -20,8 +20,19 @@ package io.github.kitarek.elasthttpd.server.consumers;
 import io.github.kitarek.elasthttpd.server.networking.NewConnection;
 
 /**
- * Created by kitarek on 16.10.15.
+ * Handles new HTTP client connection from the very begining of its lifetime till the very last message. Responsible
+ * for handling one client connected to HTTP server.
+ *
+ * The most common pattern is that this consumer is run per client connection in a separate thread.
+ *
+ * This class shouldn't handle and process directly particular requests. However it might prepare new HTTP requests
+ * for such processing.
  */
 public interface HttpConnectionConsumer {
-	void consume(NewConnection c);
+	/**
+	 * Consumes and handles new client connection received in HTTP server.
+	 *
+	 * @param c new connection to be handled (always not null) by this consumer
+	 */
+	void consumeConnection(NewConnection c);
 }

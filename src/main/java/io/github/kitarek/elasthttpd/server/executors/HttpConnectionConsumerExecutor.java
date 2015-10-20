@@ -38,7 +38,7 @@ public class HttpConnectionConsumerExecutor implements ConsumerExecutor {
 	public void execute(final HttpConnectionConsumer consumer, final NewConnection newConnection) {
 		manyThreadsExecutor.execute(new Runnable() {
 			public void run() {
-				consumer.consume(notNull(newConnection, "New connection must be not null!"));
+				consumer.consumeConnection(notNull(newConnection, "New connection must be not null!"));
 			}
 		});
 	}

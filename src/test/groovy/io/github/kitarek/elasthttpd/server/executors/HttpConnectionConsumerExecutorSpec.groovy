@@ -63,7 +63,7 @@ class HttpConnectionConsumerExecutorSpec extends Specification {
 			executorUnderTest.execute(consumer, connection)
 
 		then:
-			1 * consumer.consume(connection)
+			1 * consumer.consumeConnection(connection)
 	}
 
 	def 'Executor does not invokes consumer when connection is null'() {
@@ -81,7 +81,7 @@ class HttpConnectionConsumerExecutorSpec extends Specification {
 			executorUnderTest.execute(consumer, null)
 
 		then:
-			0 * consumer.consume(_)
+			0 * consumer.consumeConnection(_)
 		and:
 			thrown(NullPointerException)
 	}
