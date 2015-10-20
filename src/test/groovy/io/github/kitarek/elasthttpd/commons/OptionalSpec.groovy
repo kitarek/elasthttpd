@@ -16,10 +16,11 @@
  */
 
 package io.github.kitarek.elasthttpd.commons
-
 import spock.lang.Specification
 
-import static io.github.kitarek.elasthttpd.commons.Optional.*
+import static io.github.kitarek.elasthttpd.commons.Optional.empty
+import static io.github.kitarek.elasthttpd.commons.Optional.optional
+import static io.github.kitarek.elasthttpd.commons.Optional.present
 
 class OptionalSpec extends Specification {
 
@@ -215,6 +216,58 @@ class OptionalSpec extends Specification {
 		then:
 			0 * mockedDispatcher.present(_)
 			2 * mockedDispatcher.notPresent()
+	}
+
+	def 'empty() always equal to other empty()'() {
+		given:
+			def Optional<Object> empty1
+			def Optional<Object> empty2
+
+		when:
+			empty1 = empty()
+			empty2 = empty()
+
+		then:
+			empty1 == empty2
+	}
+
+	def 'optional(null) always equal to other optional(null)'() {
+		given:
+			def Optional<Object> empty1
+			def Optional<Object> empty2
+
+		when:
+			empty1 = optional(null)
+			empty2 = optional(null)
+
+		then:
+			empty1 == empty2
+	}
+
+	def 'optional() always equal to other optional() the same value'() {
+		given:
+			def Optional<Object> value1
+			def Optional<Object> value2
+
+		when:
+			value1 = optional("Text")
+			value2 = optional("Text")
+
+		then:
+			value1 == value2
+	}
+
+	def 'present() always equal to other present() the same value'() {
+		given:
+			def Optional<Object> value1
+			def Optional<Object> value2
+
+		when:
+			value1 = present("Text")
+			value2 = present("Text")
+
+		then:
+			value1 == value2
 	}
 
 

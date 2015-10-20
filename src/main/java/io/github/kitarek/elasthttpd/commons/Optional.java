@@ -72,4 +72,18 @@ public class Optional<T> {
 			dispatcher.notPresent();
 	}
 
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		Optional<?> optional = (Optional<?>) o;
+
+		return !(reference != null ? !reference.equals(optional.reference) : optional.reference != null);
+	}
+
+	@Override
+	public int hashCode() {
+		return reference != null ? reference.hashCode() : 0;
+	}
 }
