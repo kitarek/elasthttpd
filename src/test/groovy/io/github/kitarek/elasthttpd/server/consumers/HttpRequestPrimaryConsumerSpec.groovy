@@ -16,9 +16,10 @@
  */
 
 package io.github.kitarek.elasthttpd.server.consumers
-
 import io.github.kitarek.elasthttpd.server.networking.NewConnection
 import io.github.kitarek.elasthttpd.server.producers.HttpConnectionProducer
+import org.apache.http.HttpEntity
+import org.apache.http.HttpEntityEnclosingRequest
 import org.apache.http.HttpException
 import org.apache.http.HttpRequest
 import org.apache.http.HttpResponse
@@ -27,6 +28,7 @@ import org.apache.http.HttpServerConnection
 import org.apache.http.MethodNotSupportedException
 import org.apache.http.ProtocolException
 import org.apache.http.ProtocolVersion
+import org.apache.http.RequestLine
 import org.apache.http.UnsupportedHttpVersionException
 import org.apache.http.entity.ByteArrayEntity
 import org.apache.http.entity.ContentType
@@ -36,50 +38,70 @@ import spock.lang.Specification
 import spock.lang.Unroll
 
 import static io.github.kitarek.elasthttpd.commons.Optional.empty
+import static io.github.kitarek.elasthttpd.commons.Optional.present
+import static io.github.kitarek.elasthttpd.model.HttpMethod.DELETE
+import static io.github.kitarek.elasthttpd.model.HttpMethod.GET
+import static io.github.kitarek.elasthttpd.model.HttpMethod.HEAD
+import static io.github.kitarek.elasthttpd.model.HttpMethod.OPTIONS
+import static io.github.kitarek.elasthttpd.model.HttpMethod.POST
+import static io.github.kitarek.elasthttpd.model.HttpMethod.PUT
 import static org.apache.commons.io.IOUtils.toString
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST
+import static org.apache.http.HttpStatus.SC_CONTINUE
 import static org.apache.http.HttpStatus.SC_HTTP_VERSION_NOT_SUPPORTED
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR
 import static org.apache.http.HttpStatus.SC_METHOD_NOT_ALLOWED
+import static org.apache.http.HttpStatus.SC_OK
 import static org.apache.http.util.EncodingUtils.getAsciiBytes
 
 class HttpRequestPrimaryConsumerSpec extends Specification {
 
-	def consumer
-	def NewConnection newConnectionMock
-	def NewConnection newConnectionStub
+	def httpProcessorMock
 	def HttpServerConnection httpServerConnectionMock
 	def HttpResponseFactory httpResponseFactoryMock
 	def HttpConnectionProducer httpConnectionProducer
+	def HttpRequestConsumer httpRequestConsumerMock
+	def consumer
+	def NewConnection newConnectionMock
+	def NewConnection newConnectionStub
 
 
 	def setup() {
-		def httpProcessorMock = Mock(HttpProcessor)
+		httpProcessorMock = Mock(HttpProcessor)
 		httpResponseFactoryMock = Mock(HttpResponseFactory)
 		httpConnectionProducer = Mock(HttpConnectionProducer)
-		consumer = new HttpRequestPrimaryConsumer(httpResponseFactoryMock, httpProcessorMock, httpConnectionProducer)
+		httpRequestConsumerMock = Mock(HttpRequestConsumer)
+		consumer = new HttpRequestPrimaryConsumer(httpResponseFactoryMock, httpProcessorMock, httpConnectionProducer,
+				httpRequestConsumerMock)
 		newConnectionMock = Mock(NewConnection)
 		newConnectionStub = Stub(NewConnection)
 		httpServerConnectionMock = Mock(HttpServerConnection)
 	}
 
+	@Unroll
 	def 'The HttpRequestPrimaryConsuner cannot be initialized without correct instance of HttpProcessor and HttpResponseFactory'() {
 		when:
-			new HttpRequestPrimaryConsumer(httpResponseFactory, httpProcessor, httpConnectionProducer)
+			new HttpRequestPrimaryConsumer(httpResponseFactory, httpProcessor, httpConnectionProducer, httpRequestConsumer)
 
 		then:
 			thrown(NullPointerException)
 
 		where:
-			httpResponseFactory       | httpProcessor        | httpConnectionProducer
-			Mock(HttpResponseFactory) | null                 | null
-			null                      | Mock(HttpProcessor)  | null
-			null                      | null                 | null
-			Mock(HttpResponseFactory) | null                 | Mock(HttpConnectionProducer)
-			null                      | Mock(HttpProcessor)  | Mock(HttpConnectionProducer)
-			null                      | null                 | Mock(HttpConnectionProducer)
-			null                      | null                 | null
-
+			httpResponseFactory       | httpProcessor        | httpConnectionProducer       | httpRequestConsumer
+			Mock(HttpResponseFactory) | null                 | null                         | null
+			null                      | Mock(HttpProcessor)  | null                         | null
+			null                      | null                 | null                         | null
+			Mock(HttpResponseFactory) | null                 | Mock(HttpConnectionProducer) | null
+			null                      | Mock(HttpProcessor)  | Mock(HttpConnectionProducer) | null
+			null                      | null                 | Mock(HttpConnectionProducer) | null
+			null                      | null                 | null                         | null
+			Mock(HttpResponseFactory) | null                 | null                         | Mock(HttpRequestConsumer)
+			null                      | Mock(HttpProcessor)  | null                         | Mock(HttpRequestConsumer)
+			null                      | null                 | null                         | Mock(HttpRequestConsumer)
+			Mock(HttpResponseFactory) | null                 | Mock(HttpConnectionProducer) | Mock(HttpRequestConsumer)
+			null                      | Mock(HttpProcessor)  | Mock(HttpConnectionProducer) | Mock(HttpRequestConsumer)
+			null                      | null                 | Mock(HttpConnectionProducer) | Mock(HttpRequestConsumer)
+			null                      | null                 | null                         | Mock(HttpRequestConsumer)
 	}
 
 	def 'The new connection is accepted and configured in scope of work of HttpRequestPrimaryConsumer'() {
@@ -165,7 +187,138 @@ class HttpRequestPrimaryConsumerSpec extends Specification {
 			new UnsupportedHttpVersionException("Test3")  | SC_HTTP_VERSION_NOT_SUPPORTED | httpEntityForSimpleUsAsciiMessage("Test3")
 			new ProtocolException()                       | SC_BAD_REQUEST                | null
 			new ProtocolException("Test4")                | SC_BAD_REQUEST                | httpEntityForSimpleUsAsciiMessage("Test4")
+	}
 
+	@Unroll
+	def 'Consumer reads request header and checks if client ask server that it may continue sending request body. Client is notified positively via producer and consumer tries to receive that request body'() {
+		given:
+			newConnectionStub.acceptAndConfigure() >> httpServerConnectionMock
+			def expectedProtocolVersion = new ProtocolVersion("HTTP", 1, 1)
+			def httpResponseStub = Stub(HttpResponse)
+			def capturedEntity
+		and:
+			def httpEntityRequest = Stub(HttpEntityEnclosingRequest)
+			httpEntityRequest.expectContinue() >> true
+		and:
+			def requestLineStub = Stub(RequestLine)
+			httpEntityRequest.requestLine >> requestLineStub
+			requestLineStub.method >> givenHttpMethod
+		and:
+			httpResponseStub.setEntity(_) >> { parameters ->
+				capturedEntity = parameters[0]
+			}
+
+
+		when:
+			consumer.consumeConnection(newConnectionStub)
+
+
+		then:
+			1 * httpServerConnectionMock.isOpen() >> true
+			1 * httpServerConnectionMock.receiveRequestHeader() >> { httpEntityRequest }
+		and:
+
+			1 * httpServerConnectionMock.isOpen() >> false
+		and:
+			1 * httpResponseFactoryMock.newHttpResponse(expectedProtocolVersion, expectedStatus, null) >> httpResponseStub
+		and: "the request should be always accepted by sending only response header without entity"
+			capturedEntity == null
+		and:
+			1 * httpConnectionProducer.sendResponse(httpServerConnectionMock, httpResponseStub, expectedOptionalHttpMethod)
+		and:
+			1 * httpServerConnectionMock.receiveRequestEntity(httpEntityRequest)
+		and:
+			1 * httpServerConnectionMock.flush()
+			1 * httpServerConnectionMock.close()
+
+		where:
+			givenHttpMethod | expectedOptionalHttpMethod | expectedStatus
+			"GET"           | present(GET)               | SC_CONTINUE
+			"HEAD"          | present(HEAD)              | SC_CONTINUE
+			"PUT"           | present(PUT)               | SC_CONTINUE
+			"POST"          | present(POST)              | SC_CONTINUE
+	}
+
+	def 'Consumer reads request header and checks if client ask server that it may continue sending request body. Server tries to receive that request body immediately'() {
+		given:
+			newConnectionStub.acceptAndConfigure() >> httpServerConnectionMock
+		and:
+			def httpEntityRequest = Stub(HttpEntityEnclosingRequest)
+			httpEntityRequest.expectContinue() >> false
+
+		when:
+			consumer.consumeConnection(newConnectionStub)
+
+		then:
+			1 * httpServerConnectionMock.isOpen() >> true
+			1 * httpServerConnectionMock.receiveRequestHeader() >> { httpEntityRequest }
+		and:
+
+			1 * httpServerConnectionMock.isOpen() >> false
+		and:
+			1 * httpServerConnectionMock.receiveRequestEntity(httpEntityRequest)
+		and:
+			1 * httpServerConnectionMock.flush()
+			1 * httpServerConnectionMock.close()
+	}
+
+	@Unroll("Consumer reads #givenHttpMethod request header and finally request body (request entity). Server prepares default HTTP response and send it out via producer")
+	def 'Consumer reads request header and finally request body (request entity). Server prepares default HTTP response and send it out via producer'() {
+		setup:
+
+		given:
+			newConnectionStub.acceptAndConfigure() >> httpServerConnectionMock
+			def expectedProtocolVersion = new ProtocolVersion("HTTP", 1, 1)
+			def httpResponseStub = Stub(HttpResponse)
+			def capturedEntity
+		and:
+			def entityMock = Mock(HttpEntity)
+			def httpEntityRequest = Stub(HttpEntityEnclosingRequest)
+			httpEntityRequest.expectContinue() >> false
+			httpEntityRequest.getEntity() >> entityMock
+		and:
+			httpResponseStub.setEntity(_) >> { parameters ->
+				capturedEntity = parameters[0]
+			}
+
+		and:
+			def requestLineStub = Stub(RequestLine)
+			httpEntityRequest.requestLine >> requestLineStub
+			requestLineStub.method >> givenHttpMethod
+
+
+		when:
+			consumer.consumeConnection(newConnectionStub)
+
+
+		then:
+			1 * httpServerConnectionMock.isOpen() >> true
+			1 * httpServerConnectionMock.receiveRequestHeader() >> { httpEntityRequest }
+		and:
+			1 * httpServerConnectionMock.receiveRequestEntity(httpEntityRequest)
+		and: "The default response is created"
+			1 * httpResponseFactoryMock.newHttpResponse(expectedProtocolVersion, SC_OK, null) >> httpResponseStub
+			0 * httpResponseFactoryMock.newHttpResponse(_, _, _)
+		and: "The HTTP request is correctly preprocessed by processor"
+			1 * httpProcessorMock.process(httpEntityRequest, null);
+		and: "The consumption of the fully prepared request and response object is delegated to dedicated consumer"
+			1 * httpRequestConsumerMock.consumeRequest(httpEntityRequest, httpResponseStub)
+		and: "The possibly updated default response is sent to client"
+			1 * httpConnectionProducer.sendResponse(httpServerConnectionMock, httpResponseStub, expectedOptionalHttpMethod)
+			0 * httpConnectionProducer._
+		and: "The connection is closed by client or server when it's not persistent"
+			1 * httpServerConnectionMock.isOpen() >> false
+		and: "The connection needs to be always flushed and cleared when possible"
+			1 * httpServerConnectionMock.flush()
+			1 * httpServerConnectionMock.close()
+
+		where:
+			givenHttpMethod | expectedOptionalHttpMethod
+			"GET"           | present(GET)
+			"POST"          | present(POST)
+			"PUT"           | present(PUT)
+			"DELETE"        | present(DELETE)
+			"OPTIONS"       | present(OPTIONS)
 	}
 
 	// Helper method needed as equals() is not overridden for ByteArrayEntity

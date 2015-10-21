@@ -25,11 +25,13 @@ import org.apache.http.*;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.protocol.HttpProcessor;
+import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
+import static io.github.kitarek.elasthttpd.model.HttpMethod.fromString;
 import static org.apache.commons.lang3.Validate.notNull;
 import static org.apache.http.HttpStatus.*;
 import static org.apache.http.util.EncodingUtils.getAsciiBytes;
@@ -40,19 +42,22 @@ import static org.apache.http.util.EncodingUtils.getAsciiBytes;
  */
 public class HttpRequestPrimaryConsumer implements HttpConnectionConsumer {
 	public static final Logger logger = LoggerFactory.getLogger(HttpRequestPrimaryConsumer.class);
-	public static final ProtocolVersion PROTOCOL_VERSION = new ProtocolVersion("HTTP", 1, 1);
+	public static final ProtocolVersion DEFAULT_PROTOCOL_VERSION = new ProtocolVersion("HTTP", 1, 1);
 	public static final ContentType PLAIN_DEFAULT_CONTENT_TYPE = ContentType.create("text/plain", "US-ASCII");
 
 	private final HttpResponseFactory httpResponseFactory; //DefaultHttpResponseFactory.INSTANCE;
 	private final HttpProcessor httpProcessor;
 	private final HttpConnectionProducer httpConnectionProducer;
+	private final HttpRequestConsumer httpRequestConsumer;
 
 	public HttpRequestPrimaryConsumer(HttpResponseFactory httpResponseFactory,
 									  HttpProcessor httpProcessor,
-									  HttpConnectionProducer httpConnectionProducer) {
+									  HttpConnectionProducer httpConnectionProducer,
+									  HttpRequestConsumer httpRequestConsumer) {
 		this.httpResponseFactory = notNull(httpResponseFactory, "HTTP Response factory cannot be null");
 		this.httpProcessor = notNull(httpProcessor, "HTTP Processor cannot be null");
 		this.httpConnectionProducer = notNull(httpConnectionProducer, "HTTP Connection Producer cannot be null");
+		this.httpRequestConsumer = notNull(httpRequestConsumer, "HTTP Request consumer cannot be null");
 	}
 
 	public void consumeConnection(NewConnection c) {
@@ -87,18 +92,18 @@ public class HttpRequestPrimaryConsumer implements HttpConnectionConsumer {
 
 	private void consumeSingleRequest(HttpServerConnection connection) {
 		try {
-			final HttpRequest request = connection.receiveRequestHeader();
-//			request.
+			consumeSingleRequestUnchecked(connection);
 		} catch (HttpException e) {
 			HttpResponse httpResponse = respondToHttpProtocolLevelException(e);
 			httpConnectionProducer.sendResponse(connection, httpResponse, Optional.<HttpMethod>empty());
 		} catch (IOException e) {
 			logger.error("There was an I/O level error receiving request header. Cannot continue with current request");
 		}
+		// TODO handle here keep alive
 	}
 
-	private HttpResponse respondToHttpProtocolLevelException(HttpException e) {
-		final HttpResponse httpResponse = httpResponseFactory.newHttpResponse(PROTOCOL_VERSION, getHttpStatusFromException(e), null);
+	private HttpResponse respondToHttpProtocolLevelException(Exception e) {
+		final HttpResponse httpResponse = httpResponseFactory.newHttpResponse(DEFAULT_PROTOCOL_VERSION, getHttpStatusFromException(e), null);
 		fillEntityOfHttpResponseWithExceptionMessage(httpResponse, e.getMessage());
 		logger.error("There was a HTTP level error receiving request header. Responding with: {}", httpResponse.getStatusLine());
 		return httpResponse;
@@ -110,11 +115,70 @@ public class HttpRequestPrimaryConsumer implements HttpConnectionConsumer {
 		}
 	}
 
-	private int getHttpStatusFromException(HttpException e) {
+	private int getHttpStatusFromException(Exception e) {
 		return (e instanceof MethodNotSupportedException) ? SC_METHOD_NOT_ALLOWED :
 				(e instanceof UnsupportedHttpVersionException) ? SC_HTTP_VERSION_NOT_SUPPORTED :
 				(e instanceof ProtocolException) ? SC_BAD_REQUEST :
 				SC_INTERNAL_SERVER_ERROR;
+	}
+
+	private void consumeSingleRequestUnchecked(HttpServerConnection connection) throws HttpException, IOException {
+		final HttpRequest request = connection.receiveRequestHeader();
+		fetchRequestEntity(request, connection);
+		final HttpResponse response = doProcessRequestAndPrepareResponse(request);
+		consumeFullyReuqestBody(connection, request);
+		httpConnectionProducer.sendResponse(connection, response, getHttpMethodFromRequest(request));
+	}
+
+	private void fetchRequestEntity(HttpRequest request, HttpServerConnection connection) throws IOException, HttpException {
+		if (isRequestImplementingEntity(request)) {
+			HttpEntityEnclosingRequest requestWithEntity = upgradeHttpRequestSupportingEntities(request);
+			if (clientAsksForConfirmationToContinueTransmission(requestWithEntity)) {
+				confirmContinuationToClientBySendingContinueResponse(connection, request);
+			}
+			connection.receiveRequestEntity(requestWithEntity);
+		}
+	}
+
+	private boolean clientAsksForConfirmationToContinueTransmission(HttpEntityEnclosingRequest requestWithEntity) {
+		return requestWithEntity.expectContinue();
+	}
+
+	private void confirmContinuationToClientBySendingContinueResponse(HttpServerConnection connection, HttpRequest request) {
+		final HttpResponse responseToSend = httpResponseFactory.newHttpResponse(DEFAULT_PROTOCOL_VERSION, SC_CONTINUE, null);
+		final Optional<HttpMethod> optionalhttpRequestedMethod = getHttpMethodFromRequest(request);
+		httpConnectionProducer.sendResponse(connection,	responseToSend,	optionalhttpRequestedMethod);
+	}
+
+	private Optional<HttpMethod> getHttpMethodFromRequest(HttpRequest request) {
+		return fromString(request.getRequestLine().getMethod());
+	}
+
+	private void consumeFullyReuqestBody(HttpServerConnection connection, HttpRequest request) throws IOException {
+		if (isRequestImplementingEntity(request)) {
+			final HttpEntityEnclosingRequest entityEnclosingRequest = upgradeHttpRequestSupportingEntities(request);
+			final HttpEntity entity = entityEnclosingRequest.getEntity();
+			EntityUtils.consume(entity);
+		}
+	}
+
+	private boolean isRequestImplementingEntity(HttpRequest request) {
+		return (request instanceof HttpEntityEnclosingRequest);
+	}
+
+	private HttpEntityEnclosingRequest upgradeHttpRequestSupportingEntities(HttpRequest request) {
+		return (HttpEntityEnclosingRequest) request;
+	}
+
+	private HttpResponse doProcessRequestAndPrepareResponse(HttpRequest request) throws IOException, HttpException {
+		final HttpResponse response = httpResponseFactory.newHttpResponse(DEFAULT_PROTOCOL_VERSION, SC_OK, null);
+		httpProcessor.process(request, null);
+		try {
+			httpRequestConsumer.consumeRequest(request, response);
+		} catch (RuntimeException e) {
+			respondToHttpProtocolLevelException(e);
+		}
+		return response;
 	}
 
 
