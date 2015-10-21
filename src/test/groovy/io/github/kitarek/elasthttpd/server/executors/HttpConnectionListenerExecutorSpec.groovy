@@ -65,4 +65,45 @@ class HttpConnectionListenerExecutorSpec extends Specification {
 			thrown(NullPointerException)
 	}
 
+	def 'Executor waits for successfull termination and the status of operation is true'() {
+		given:
+			def ExecutorService executorServiceMock = Mock()
+			executorUnderTest.oneThreadExecutor = executorServiceMock
+
+		when:
+			def status = executorUnderTest.waitForTermination()
+
+		then:
+			1 * executorServiceMock.awaitTermination(0, _)
+		and:
+			status == true
+	}
+
+	def 'Executor waits for successfull termination but it could be breaked by interruption of another thread and the status of waiting operation is false'() {
+		given:
+			def ExecutorService executorServiceMock = Mock()
+			executorUnderTest.oneThreadExecutor = executorServiceMock
+
+		when:
+			def status = executorUnderTest.waitForTermination()
+
+		then:
+			1 * executorServiceMock.awaitTermination(0, _) >> {throw new InterruptedException()}
+		and:
+			status == false
+	}
+
+
+	def 'Executor can be terminated'() {
+		given:
+			def ExecutorService executorServiceMock = Mock()
+			executorUnderTest.oneThreadExecutor = executorServiceMock
+
+		when:
+			executorUnderTest.terminate()
+
+		then:
+			1 * executorServiceMock.shutdown()
+	}
+
 }

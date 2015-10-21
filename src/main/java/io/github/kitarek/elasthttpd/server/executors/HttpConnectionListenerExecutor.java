@@ -19,8 +19,11 @@ package io.github.kitarek.elasthttpd.server.executors;
 
 import io.github.kitarek.elasthttpd.server.listeners.HttpConnectionListener;
 import io.github.kitarek.elasthttpd.server.networking.ListeningSocket;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.apache.commons.lang3.Validate.notNull;
@@ -28,6 +31,7 @@ import static org.apache.commons.lang3.Validate.notNull;
 // TODO add termination handling and waiting
 public class HttpConnectionListenerExecutor implements ListenerExecutor {
 
+	public static final Logger logger = LoggerFactory.getLogger(HttpConnectionListenerExecutor.class);
 	private ExecutorService oneThreadExecutor = newSingleThreadExecutor();
 
 	public void execute(final HttpConnectionListener listener, final ListeningSocket socket) {
@@ -38,4 +42,17 @@ public class HttpConnectionListenerExecutor implements ListenerExecutor {
 		});
 	}
 
+	public boolean waitForTermination() {
+		try {
+			oneThreadExecutor.awaitTermination(0, TimeUnit.DAYS);
+			return true;
+		} catch (InterruptedException e) {
+			logger.error("Awaiting for termination was aborted");
+			return false;
+		}
+	}
+
+	public void terminate() {
+		oneThreadExecutor.shutdown();
+	}
 }

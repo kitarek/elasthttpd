@@ -34,4 +34,19 @@ public interface ListenerExecutor {
 	 * @param socket the socket that will be the exclusive resource that cannot be shared and used within any other thread
 	 */
 	void execute(HttpConnectionListener listener, ListeningSocket socket);
+
+	/**
+	 * Blocks the current thread (possibly parent thread) until the executor hasn't been terminated by
+	 * {@link #terminate()} method. In some cirumstences the blockage on that operation could be breaked. If you
+	 * would like to wait you should invoke that method once again
+	 *
+	 * @return if there was successful termination (true) or rather abnormal break of awaiting
+	 */
+	boolean waitForTermination();
+
+	/**
+	 * Terminates executor and stops all the executed threads.
+	 */
+	void terminate();
+
 }
