@@ -18,25 +18,23 @@
 package io.github.kitarek.elasthttpd.server
 import io.github.kitarek.elasthttpd.server.producers.HttpConnectionCompliantResponseProducer
 import io.github.kitarek.elasthttpd.server.producers.HttpConnectionProducer
+import org.apache.http.HttpRequest
 import org.apache.http.HttpResponse
 import org.apache.http.HttpServerConnection
+import org.apache.http.RequestLine
 import org.apache.http.StatusLine
+import org.apache.http.protocol.HttpContext
 import org.apache.http.protocol.HttpProcessor
 import spock.lang.Specification
 import spock.lang.Unroll
 
-import static io.github.kitarek.elasthttpd.commons.Optional.empty
-import static io.github.kitarek.elasthttpd.commons.Optional.present
-import static io.github.kitarek.elasthttpd.model.HttpMethod.DELETE
-import static io.github.kitarek.elasthttpd.model.HttpMethod.GET
-import static io.github.kitarek.elasthttpd.model.HttpMethod.HEAD
-import static io.github.kitarek.elasthttpd.model.HttpMethod.POST
-import static io.github.kitarek.elasthttpd.model.HttpMethod.PUT
 import static org.apache.http.HttpStatus.SC_ACCEPTED
 import static org.apache.http.HttpStatus.SC_NOT_MODIFIED
 import static org.apache.http.HttpStatus.SC_NO_CONTENT
 import static org.apache.http.HttpStatus.SC_OK
 import static org.apache.http.HttpStatus.SC_RESET_CONTENT
+import static org.apache.http.protocol.HttpCoreContext.HTTP_CONNECTION
+import static org.apache.http.protocol.HttpCoreContext.HTTP_REQUEST
 
 class HttpConnectionCompliantResponseProducerSpec extends Specification {
 
@@ -45,6 +43,7 @@ class HttpConnectionCompliantResponseProducerSpec extends Specification {
 	def httpServerConnection
 	def HttpConnectionProducer httpConnnectionProducer
 	def HttpProcessor httpProcessorMock
+
 
 	def setup() {
 		httpResponseStub = Stub(HttpResponse)
@@ -63,32 +62,57 @@ class HttpConnectionCompliantResponseProducerSpec extends Specification {
 	}
 
 	@Unroll
-	def 'HTTP connection producer will faill to send response header if HTTP server connection, HTTP request or optional HTTP request method is not defined (null)'() {
+	def 'HTTP connection producer will faill to send response header if HTTP response and context are not defined (null)'() {
 		when:
-			httpConnnectionProducer.sendResponse(serverConnection, responseToSend, optionalHttpRequestedMethod)
+			httpConnnectionProducer.sendResponse(responseToSend, httpContext)
 
 		then:
 			thrown(NullPointerException)
 
 		where:
-			serverConnection           | responseToSend     | optionalHttpRequestedMethod
-		    Mock(HttpServerConnection) | null               | empty()
-			null                       | null               | empty()
-			null                       | Mock(HttpResponse) | empty()
-			null                       | Mock(HttpResponse) | null
-			Mock(HttpServerConnection) | Mock(HttpResponse) | null
-			Mock(HttpServerConnection) | null               | null
-			null                       | null               | null
+			httpContext                | responseToSend
+			Mock(HttpContext)          | null
+			null                       | null
+			null                       | Mock(HttpResponse)
+	}
+
+	@Unroll
+	def 'HTTP connection producer will faill to send response header if HTTP server connection, HTTP request or optional HTTP request method is not defined (null)'() {
+		given:
+			def HttpContext httpContextStub = Stub(HttpContext)
+			httpContextStub.getAttribute(HTTP_CONNECTION) >> serverConnection
+			httpContextStub.getAttribute(HTTP_REQUEST) >> request
+
+		when:
+			httpConnnectionProducer.sendResponse(Mock(HttpResponse), httpContextStub)
+
+		then:
+			thrown(NullPointerException)
+
+		where:
+			serverConnection           | request
+		    Mock(HttpServerConnection) | null
+			null                       | null
+			null                       | Mock(HttpRequest)
 	}
 
 	@Unroll
 	def 'HTTP connection producer will always send response header and only response entity when there is no HEAD request method or NO_CONTENT/NOT_MODIFIED/RESET_CONTENT status code'() {
 		given:
+			def httpRequestStub = Stub(HttpRequest)
+			def requestLineStub = Stub(RequestLine)
+			def HttpContext httpContextStub = Stub(HttpContext)
+			httpContextStub.getAttribute(HTTP_CONNECTION) >> httpServerConnection
+			httpContextStub.getAttribute(HTTP_REQUEST) >> httpRequestStub
+		and:
+			httpRequestStub.getRequestLine() >> requestLineStub
+			requestLineStub.method >> givenHttpMethod
+		and:
 			httpResponseStub.getStatusLine() >> statusLineStub
 			statusLineStub.statusCode >> givenStatusCode
 
 		when:
-			httpConnnectionProducer.sendResponse(httpServerConnection, httpResponseStub, optionalHttpMethod)
+			httpConnnectionProducer.sendResponse(httpResponseStub, httpContextStub)
 
 		then:
 			1 * httpProcessorMock.process(httpResponseStub, _)
@@ -98,15 +122,15 @@ class HttpConnectionCompliantResponseProducerSpec extends Specification {
 			0 * _
 
 		where:
-			givenStatusCode  | optionalHttpMethod | sendResponseEntityCalls
-			SC_NO_CONTENT    | empty()            | 0
-			SC_NO_CONTENT    | present(HEAD)      | 0
-			SC_OK            | present(HEAD)      | 0
-			SC_OK            | present(GET)       | 1
-			SC_OK            | present(POST)      | 1
-			SC_NOT_MODIFIED  | present(PUT)       | 0
-			SC_RESET_CONTENT | present(DELETE)    | 0
-			SC_ACCEPTED      | present(POST)      | 1
+			givenStatusCode  | givenHttpMethod | sendResponseEntityCalls
+			SC_NO_CONTENT    | null            | 0
+			SC_NO_CONTENT    | "HEAD"          | 0
+			SC_OK            | "HEAD"          | 0
+			SC_OK            | "GET"           | 1
+			SC_OK            | "POST"          | 1
+			SC_NOT_MODIFIED  | "PUT"           | 0
+			SC_RESET_CONTENT | "DELETE"        | 0
+			SC_ACCEPTED      | "POST"          | 1
 	}
 }
 

@@ -32,12 +32,12 @@ import org.apache.http.RequestLine
 import org.apache.http.UnsupportedHttpVersionException
 import org.apache.http.entity.ByteArrayEntity
 import org.apache.http.entity.ContentType
+import org.apache.http.protocol.HttpContext
 import org.apache.http.protocol.HttpProcessor
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
 
-import static io.github.kitarek.elasthttpd.commons.Optional.empty
 import static io.github.kitarek.elasthttpd.commons.Optional.present
 import static io.github.kitarek.elasthttpd.model.HttpMethod.DELETE
 import static io.github.kitarek.elasthttpd.model.HttpMethod.GET
@@ -170,12 +170,12 @@ class HttpRequestPrimaryConsumerSpec extends Specification {
 			1 * httpServerConnectionMock.receiveRequestHeader() >> { throw exception }
 			1 * httpServerConnectionMock.isOpen() >> false
 		and:
-			1 * httpResponseFactoryMock.newHttpResponse(expectedProtocolVersion, expectedStatus, null) >> httpResponseStub
+			1 * httpResponseFactoryMock.newHttpResponse(expectedProtocolVersion, expectedStatus, _) >> httpResponseStub
 			0 * httpResponseFactoryMock.newHttpResponse(_, _, _)
 		and:
 			areEntitiesEqual(capturedEntity, expectedEntity)
 		and:
-			1 * httpConnectionProducer.sendResponse(httpServerConnectionMock, httpResponseStub, empty())
+			1 * httpConnectionProducer.sendResponse(httpResponseStub, { it instanceof HttpContext && it != null })
 
 		where:
 			exception                                     | expectedStatus                | expectedEntity
@@ -220,11 +220,11 @@ class HttpRequestPrimaryConsumerSpec extends Specification {
 
 			1 * httpServerConnectionMock.isOpen() >> false
 		and:
-			1 * httpResponseFactoryMock.newHttpResponse(expectedProtocolVersion, expectedStatus, null) >> httpResponseStub
+			1 * httpResponseFactoryMock.newHttpResponse(expectedProtocolVersion, expectedStatus, _) >> httpResponseStub
 		and: "the request should be always accepted by sending only response header without entity"
 			capturedEntity == null
 		and:
-			1 * httpConnectionProducer.sendResponse(httpServerConnectionMock, httpResponseStub, expectedOptionalHttpMethod)
+			1 * httpConnectionProducer.sendResponse(httpResponseStub, { it instanceof HttpContext && it != null })
 		and:
 			1 * httpServerConnectionMock.receiveRequestEntity(httpEntityRequest)
 		and:
@@ -297,14 +297,14 @@ class HttpRequestPrimaryConsumerSpec extends Specification {
 		and:
 			1 * httpServerConnectionMock.receiveRequestEntity(httpEntityRequest)
 		and: "The default response is created"
-			1 * httpResponseFactoryMock.newHttpResponse(expectedProtocolVersion, SC_OK, null) >> httpResponseStub
+			1 * httpResponseFactoryMock.newHttpResponse(expectedProtocolVersion, SC_OK, _) >> httpResponseStub
 			0 * httpResponseFactoryMock.newHttpResponse(_, _, _)
 		and: "The HTTP request is correctly preprocessed by processor"
 			1 * httpProcessorMock.process(httpEntityRequest, null);
 		and: "The consumption of the fully prepared request and response object is delegated to dedicated consumer"
 			1 * httpRequestConsumerMock.consumeRequest(httpEntityRequest, httpResponseStub)
 		and: "The possibly updated default response is sent to client"
-			1 * httpConnectionProducer.sendResponse(httpServerConnectionMock, httpResponseStub, expectedOptionalHttpMethod)
+			1 * httpConnectionProducer.sendResponse(httpResponseStub, { it instanceof HttpContext && it != null })
 			0 * httpConnectionProducer._
 		and: "The connection is closed by client or server when it's not persistent"
 			1 * httpServerConnectionMock.isOpen() >> false

@@ -17,10 +17,8 @@
 
 package io.github.kitarek.elasthttpd.server.producers;
 
-import io.github.kitarek.elasthttpd.commons.Optional;
-import io.github.kitarek.elasthttpd.model.HttpMethod;
 import org.apache.http.HttpResponse;
-import org.apache.http.HttpServerConnection;
+import org.apache.http.protocol.HttpContext;
 
 /**
  * The responsibility of this producer is to successfully deliver the specified by user HTTP response based
@@ -37,11 +35,9 @@ public interface HttpConnectionProducer {
 	 * If you don't provide HTTP method for which you are responding, any implementation should assume that the fully
 	 * defined response will be sent.
 	 *
-	 * @param serverConnection HTTP server connection through which response will be sent
 	 * @param responseToSend the valid and correct response to be sent
-	 * @param optionalhttpRequestedMethod not-null HTTP method received in request
+	 * @param httpContext not-null HTTP context that holds differnt HTTP transmission/connection related attributes
 	 */
-	void sendResponse(HttpServerConnection serverConnection, HttpResponse responseToSend,
-					  Optional<HttpMethod> optionalhttpRequestedMethod);
+	void sendResponse(HttpResponse responseToSend, HttpContext httpContext);
 
 }

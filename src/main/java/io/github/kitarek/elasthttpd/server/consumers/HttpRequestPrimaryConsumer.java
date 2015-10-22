@@ -17,13 +17,12 @@
 
 package io.github.kitarek.elasthttpd.server.consumers;
 
-import io.github.kitarek.elasthttpd.commons.Optional;
-import io.github.kitarek.elasthttpd.model.HttpMethod;
 import io.github.kitarek.elasthttpd.server.networking.NewConnection;
 import io.github.kitarek.elasthttpd.server.producers.HttpConnectionProducer;
 import org.apache.http.*;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
+import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpProcessor;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
@@ -31,9 +30,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-import static io.github.kitarek.elasthttpd.model.HttpMethod.fromString;
 import static org.apache.commons.lang3.Validate.notNull;
 import static org.apache.http.HttpStatus.*;
+import static org.apache.http.protocol.HttpCoreContext.*;
 import static org.apache.http.util.EncodingUtils.getAsciiBytes;
 
 /**
@@ -68,8 +67,10 @@ public class HttpRequestPrimaryConsumer implements HttpConnectionConsumer {
 	}
 
 	private void consumeRequestsUntilConnectionIsOpen(HttpServerConnection connection) {
+		final HttpContext httpContext = create();
+		httpContext.setAttribute(HTTP_CONNECTION, connection);
 		while (connection.isOpen()) {
-			consumeSingleRequest(connection);
+			consumeSingleRequest(connection, httpContext);
 		}
 	}
 
@@ -90,20 +91,21 @@ public class HttpRequestPrimaryConsumer implements HttpConnectionConsumer {
 	}
 
 
-	private void consumeSingleRequest(HttpServerConnection connection) {
+	private void consumeSingleRequest(HttpServerConnection connection, HttpContext httpContext) {
 		try {
-			consumeSingleRequestUnchecked(connection);
+			consumeSingleRequestUnchecked(connection, httpContext);
 		} catch (HttpException e) {
-			HttpResponse httpResponse = respondToHttpProtocolLevelException(e);
-			httpConnectionProducer.sendResponse(connection, httpResponse, Optional.<HttpMethod>empty());
+			HttpResponse httpResponse = respondToHttpProtocolLevelException(e, httpContext);
+			httpConnectionProducer.sendResponse(httpResponse, httpContext);
 		} catch (IOException e) {
 			logger.error("There was an I/O level error receiving request header. Cannot continue with current request");
 		}
 		// TODO handle here keep alive
 	}
 
-	private HttpResponse respondToHttpProtocolLevelException(Exception e) {
-		final HttpResponse httpResponse = httpResponseFactory.newHttpResponse(DEFAULT_PROTOCOL_VERSION, getHttpStatusFromException(e), null);
+	private HttpResponse respondToHttpProtocolLevelException(Exception e, HttpContext httpContext) {
+		final HttpResponse httpResponse = httpResponseFactory.newHttpResponse(DEFAULT_PROTOCOL_VERSION,
+				getHttpStatusFromException(e), httpContext);
 		fillEntityOfHttpResponseWithExceptionMessage(httpResponse, e.getMessage());
 		logger.error("There was a HTTP level error receiving request header. Responding with: {}", httpResponse.getStatusLine());
 		return httpResponse;
@@ -122,19 +124,21 @@ public class HttpRequestPrimaryConsumer implements HttpConnectionConsumer {
 				SC_INTERNAL_SERVER_ERROR;
 	}
 
-	private void consumeSingleRequestUnchecked(HttpServerConnection connection) throws HttpException, IOException {
+	private void consumeSingleRequestUnchecked(HttpServerConnection connection, HttpContext httpContext) throws HttpException, IOException {
 		final HttpRequest request = connection.receiveRequestHeader();
-		fetchRequestEntity(request, connection);
-		final HttpResponse response = doProcessRequestAndPrepareResponse(request);
-		consumeFullyReuqestBody(connection, request);
-		httpConnectionProducer.sendResponse(connection, response, getHttpMethodFromRequest(request));
+		httpContext.setAttribute(HTTP_REQUEST, request);
+		fetchRequestEntity(request, connection, httpContext);
+		final HttpResponse response = doProcessRequestAndPrepareResponse(request, httpContext);
+		consumeFullyReuqestBody(request);
+		httpContext.setAttribute(HTTP_RESPONSE, request);
+		httpConnectionProducer.sendResponse(response, httpContext);
 	}
 
-	private void fetchRequestEntity(HttpRequest request, HttpServerConnection connection) throws IOException, HttpException {
+	private void fetchRequestEntity(HttpRequest request, HttpServerConnection connection, HttpContext httpContext) throws IOException, HttpException {
 		if (isRequestImplementingEntity(request)) {
 			HttpEntityEnclosingRequest requestWithEntity = upgradeHttpRequestSupportingEntities(request);
 			if (clientAsksForConfirmationToContinueTransmission(requestWithEntity)) {
-				confirmContinuationToClientBySendingContinueResponse(connection, request);
+				confirmContinuationToClientBySendingContinueResponse(connection, request, httpContext);
 			}
 			connection.receiveRequestEntity(requestWithEntity);
 		}
@@ -144,17 +148,12 @@ public class HttpRequestPrimaryConsumer implements HttpConnectionConsumer {
 		return requestWithEntity.expectContinue();
 	}
 
-	private void confirmContinuationToClientBySendingContinueResponse(HttpServerConnection connection, HttpRequest request) {
-		final HttpResponse responseToSend = httpResponseFactory.newHttpResponse(DEFAULT_PROTOCOL_VERSION, SC_CONTINUE, null);
-		final Optional<HttpMethod> optionalhttpRequestedMethod = getHttpMethodFromRequest(request);
-		httpConnectionProducer.sendResponse(connection,	responseToSend,	optionalhttpRequestedMethod);
+	private void confirmContinuationToClientBySendingContinueResponse(HttpServerConnection connection, HttpRequest request, HttpContext httpContext) {
+		final HttpResponse responseToSend = httpResponseFactory.newHttpResponse(DEFAULT_PROTOCOL_VERSION, SC_CONTINUE, httpContext);
+		httpConnectionProducer.sendResponse(responseToSend, httpContext);
 	}
 
-	private Optional<HttpMethod> getHttpMethodFromRequest(HttpRequest request) {
-		return fromString(request.getRequestLine().getMethod());
-	}
-
-	private void consumeFullyReuqestBody(HttpServerConnection connection, HttpRequest request) throws IOException {
+	private void consumeFullyReuqestBody(HttpRequest request) throws IOException {
 		if (isRequestImplementingEntity(request)) {
 			final HttpEntityEnclosingRequest entityEnclosingRequest = upgradeHttpRequestSupportingEntities(request);
 			final HttpEntity entity = entityEnclosingRequest.getEntity();
@@ -170,13 +169,13 @@ public class HttpRequestPrimaryConsumer implements HttpConnectionConsumer {
 		return (HttpEntityEnclosingRequest) request;
 	}
 
-	private HttpResponse doProcessRequestAndPrepareResponse(HttpRequest request) throws IOException, HttpException {
+	private HttpResponse doProcessRequestAndPrepareResponse(HttpRequest request, HttpContext httpContext) throws IOException, HttpException {
 		final HttpResponse response = httpResponseFactory.newHttpResponse(DEFAULT_PROTOCOL_VERSION, SC_OK, null);
 		httpProcessor.process(request, null);
 		try {
 			httpRequestConsumer.consumeRequest(request, response);
 		} catch (RuntimeException e) {
-			respondToHttpProtocolLevelException(e);
+			respondToHttpProtocolLevelException(e, httpContext);
 		}
 		return response;
 	}

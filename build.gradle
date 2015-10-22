@@ -38,7 +38,11 @@ dependencies {
 	testCompile 'org.powermock:powermock-module-junit4-rule:1.6.3'
 	testCompile 'org.powermock:powermock-classloading-xstream:1.6.3'
 	testCompile 'commons-io:commons-io:2.4'
+	testCompile 'org.apache.httpcomponents:httpclient:4.5'
+	testCompile 'org.slf4j:jcl-over-slf4j:1.7.2'
+	testCompile 'org.slf4j:log4j-over-slf4j:1.7.2'
 
 	testRuntime 'cglib:cglib-nodep:3.1'
 	testRuntime 'org.objenesis:objenesis:2.1'
+
 }

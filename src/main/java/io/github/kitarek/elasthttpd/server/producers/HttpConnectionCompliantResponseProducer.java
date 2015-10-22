@@ -20,8 +20,10 @@ package io.github.kitarek.elasthttpd.server.producers;
 import io.github.kitarek.elasthttpd.commons.Optional;
 import io.github.kitarek.elasthttpd.model.HttpMethod;
 import org.apache.http.HttpException;
+import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpServerConnection;
+import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +33,8 @@ import java.io.IOException;
 import static io.github.kitarek.elasthttpd.model.HttpMethod.HEAD;
 import static org.apache.commons.lang3.Validate.notNull;
 import static org.apache.http.HttpStatus.*;
+import static org.apache.http.protocol.HttpCoreContext.HTTP_CONNECTION;
+import static org.apache.http.protocol.HttpCoreContext.HTTP_REQUEST;
 
 public class HttpConnectionCompliantResponseProducer implements HttpConnectionProducer {
 
@@ -41,21 +45,36 @@ public class HttpConnectionCompliantResponseProducer implements HttpConnectionPr
 		this.httpProcessor = notNull(httpProcessor, "HTTP procesorr needs to be specified");
 	}
 
-	public void sendResponse(HttpServerConnection serverConnection, HttpResponse responseToSend,
-							 Optional<HttpMethod> optionalhttpRequestedMethod) {
-		notNull(serverConnection, "HTTP server connection cannot be null");
+	public void sendResponse(HttpResponse responseToSend, HttpContext httpContext) {
 		notNull(responseToSend, "HTTP response to send though connection cannot be null");
-		notNull(optionalhttpRequestedMethod, "Optional HTTP request method cannot be null");
+		notNull(httpContext, "HTTP context cannot be null");
+		final HttpServerConnection connection = getConnectionFromContext(httpContext);
 		try {
-			httpProcessor.process(responseToSend, null);
-			sendResponseUnchecked(serverConnection, responseToSend, optionalhttpRequestedMethod);
+			httpProcessor.process(responseToSend, httpContext);
+			sendResponseUnchecked(connection, responseToSend, getHttpMethodOptionalFromContext(httpContext));
 		} catch (HttpException e) {
 			logger.error("There was an HTTP application level exception when trying to send exception", e);
-			closeConnectionIfPossible(serverConnection);
+			closeConnectionIfPossible(connection);
 		} catch (IOException e) {
 			logger.error("I/O exception when trying to send response", e);
-			closeConnectionIfPossible(serverConnection);
+			closeConnectionIfPossible(connection);
 		}
+	}
+
+	private Optional<HttpMethod> getHttpMethodOptionalFromContext(HttpContext httpContext) {
+		final Object requestObject = notNull(httpContext.getAttribute(HTTP_REQUEST), "HTTP request must be defined in context");
+		return (requestObject instanceof HttpRequest)
+				? getHttpMethodOptionalFromRequest((HttpRequest) requestObject)
+				: Optional.<HttpMethod>empty();
+	}
+
+	private Optional<HttpMethod> getHttpMethodOptionalFromRequest(HttpRequest requestObject) {
+		return HttpMethod.fromString(requestObject.getRequestLine().getMethod());
+	}
+
+	private HttpServerConnection getConnectionFromContext(HttpContext httpContext) {
+		return (HttpServerConnection) notNull(httpContext.getAttribute(HTTP_CONNECTION),
+				"HTTP connection needs to be defined in HTTP context");
 	}
 
 	private void closeConnectionIfPossible(HttpServerConnection serverConnection) {
