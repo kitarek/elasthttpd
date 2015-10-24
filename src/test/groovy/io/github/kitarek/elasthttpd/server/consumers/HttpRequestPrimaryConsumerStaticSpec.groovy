@@ -83,7 +83,7 @@ class HttpRequestPrimaryConsumerStaticSpec extends Specification {
 		and: "All the request entities are consumed and won't be read as a part of another request"
 			PowerMock.verifyAll()
 		and: "The connection is closed by client or server when it's not persistent"
-			1 * httpServerConnectionMock.isOpen() >> false
+			2 * httpServerConnectionMock.isOpen() >> false
 
 		where:
 			givenHttpMethod | expectedOptionalHttpMethod

@@ -16,6 +16,7 @@
  */
 
 package io.github.kitarek.elasthttpd.server.listeners
+
 import io.github.kitarek.elasthttpd.model.ServerState
 import io.github.kitarek.elasthttpd.server.consumers.HttpConnectionConsumer
 import io.github.kitarek.elasthttpd.server.executors.ConsumerExecutor
@@ -25,6 +26,8 @@ import spock.lang.Specification
 import spock.lang.Unroll
 import spock.util.concurrent.PollingConditions
 
+import static io.github.kitarek.elasthttpd.commons.Optional.empty
+import static io.github.kitarek.elasthttpd.commons.Optional.present
 import static io.github.kitarek.elasthttpd.model.ServerState.RUNNING
 import static io.github.kitarek.elasthttpd.model.ServerState.STOPPED
 import static io.github.kitarek.elasthttpd.model.ServerState.STOPPING
@@ -98,7 +101,7 @@ class SynchronousStoppableHttpConnectionListenerSpec extends Specification {
 			listener.listenAndPassNewConnections(socket)
 
 		then:
-			1 * socket.listenForANewConnection() >> newConnection
+			1 * socket.listenForANewConnection() >> present(newConnection)
 		and: "Executor need to throw exception to stop constant listening for test purposes"
 			1 * executor.execute(consumer, newConnection) >> { throw new RuntimeException() }
 		and:
@@ -124,11 +127,11 @@ class SynchronousStoppableHttpConnectionListenerSpec extends Specification {
 			listener.listenAndPassNewConnections(socket)
 
 		then: "Should listen 10 times for new connections"
-			10 * socket.listenForANewConnection() >> newConnection
+			10 * socket.listenForANewConnection() >> present(newConnection)
 		and: "Executor is passing 10 new connections to consumer, each lasts 100 ms"
 			10 * executor.execute(consumer, newConnection) >> { sleep(oneHundredOfMiliseconds) }
 		and: "Should listen once again for a new connection"
-			1 * socket.listenForANewConnection() >> newConnection
+			1 * socket.listenForANewConnection() >> present(newConnection)
 		and: "The last found connection will be passed to executor and it will throw exception for purposes of finishing this test"
 			1 * executor.execute(consumer, newConnection) >> { throw new RuntimeException() }
 		and:
@@ -151,13 +154,13 @@ class SynchronousStoppableHttpConnectionListenerSpec extends Specification {
 			listener.listenAndPassNewConnections(socket)
 
 		then: "Should listen 10 times for new connections"
-			10 * socket.listenForANewConnection() >> newConnection
+			10 * socket.listenForANewConnection() >> present(newConnection)
 		and: "Executor is passing 10 new connections to consumer, each lasts 100 ms"
-			11 * executor.execute(consumer, newConnection) >> { sleep(oneHundredOfMiliseconds) }
+			10 * executor.execute(consumer, newConnection) >> { sleep(oneHundredOfMiliseconds) }
 		and: "Should listen once again for a new connection. During that time listener is being stopped."
 			1 * socket.listenForANewConnection() >> { listener.stopListening();
 				actualServerStateAfterStopping = listener.state;
-				newConnection
+				empty()
 			}
 		and:
 			actualServerStateAfterStopping == STOPPING
@@ -214,6 +217,8 @@ class SynchronousStoppableHttpConnectionListenerSpec extends Specification {
 		and:
 			def listener = new SynchronousStoppableHttpConnectionListener(executor, consumer)
 			def ListeningSocket socket = Mock()
+		and:
+			socket.listenForANewConnection() >> present(Mock(NewConnection))
 		and:
 			executor.execute(_) >> { sleep(5 * oneHundredOfMiliseconds) }
 		and:
@@ -290,6 +295,7 @@ class SynchronousStoppableHttpConnectionListenerSpec extends Specification {
 
 		then:
 			listener.state != STOPPING
+			1 * executor.terminate()
 	}
 
 }

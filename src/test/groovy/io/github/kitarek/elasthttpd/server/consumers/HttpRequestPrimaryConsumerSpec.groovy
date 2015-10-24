@@ -113,7 +113,7 @@ class HttpRequestPrimaryConsumerSpec extends Specification {
 	}
 
 
-	def 'The new connection needs to be correctly flushed and closed at the very end of primary consumer'() {
+	def 'The new connection needs to be correctly flushed and closed at the very end of primary consumer if its open'() {
 		given:
 			newConnectionStub.acceptAndConfigure() >> httpServerConnectionMock
 
@@ -121,6 +121,9 @@ class HttpRequestPrimaryConsumerSpec extends Specification {
 			consumer.consumeConnection(newConnectionStub)
 
 		then:
+			1 * httpServerConnectionMock.isOpen() >> true
+			1 * httpServerConnectionMock.isOpen() >> false
+			1 * httpServerConnectionMock.isOpen() >> true
 			1 * httpServerConnectionMock.flush()
 			1 * httpServerConnectionMock.close()
 	}
@@ -133,7 +136,7 @@ class HttpRequestPrimaryConsumerSpec extends Specification {
 			consumer.consumeConnection(newConnectionStub)
 
 		then:
-			1 * httpServerConnectionMock.isOpen() >> false
+			2 * httpServerConnectionMock.isOpen() >> false
 	}
 
 	def 'If the connection is still open we should try to read request header first'() {
@@ -147,7 +150,7 @@ class HttpRequestPrimaryConsumerSpec extends Specification {
 		then:
 			1 * httpServerConnectionMock.isOpen() >> true
 			1 * httpServerConnectionMock.receiveRequestHeader() >> httpRequestStub
-			1 * httpServerConnectionMock.isOpen() >> false
+			2 * httpServerConnectionMock.isOpen() >> false
 	}
 
 	@Unroll
@@ -168,7 +171,7 @@ class HttpRequestPrimaryConsumerSpec extends Specification {
 		then:
 			1 * httpServerConnectionMock.isOpen() >> true
 			1 * httpServerConnectionMock.receiveRequestHeader() >> { throw exception }
-			1 * httpServerConnectionMock.isOpen() >> false
+			2 * httpServerConnectionMock.isOpen() >> false
 		and:
 			1 * httpResponseFactoryMock.newHttpResponse(expectedProtocolVersion, expectedStatus, _) >> httpResponseStub
 			0 * httpResponseFactoryMock.newHttpResponse(_, _, _)
@@ -217,7 +220,6 @@ class HttpRequestPrimaryConsumerSpec extends Specification {
 			1 * httpServerConnectionMock.isOpen() >> true
 			1 * httpServerConnectionMock.receiveRequestHeader() >> { httpEntityRequest }
 		and:
-
 			1 * httpServerConnectionMock.isOpen() >> false
 		and:
 			1 * httpResponseFactoryMock.newHttpResponse(expectedProtocolVersion, expectedStatus, _) >> httpResponseStub
@@ -228,8 +230,7 @@ class HttpRequestPrimaryConsumerSpec extends Specification {
 		and:
 			1 * httpServerConnectionMock.receiveRequestEntity(httpEntityRequest)
 		and:
-			1 * httpServerConnectionMock.flush()
-			1 * httpServerConnectionMock.close()
+			1 * httpServerConnectionMock.isOpen() >> false
 
 		where:
 			givenHttpMethod | expectedOptionalHttpMethod | expectedStatus
@@ -253,13 +254,9 @@ class HttpRequestPrimaryConsumerSpec extends Specification {
 			1 * httpServerConnectionMock.isOpen() >> true
 			1 * httpServerConnectionMock.receiveRequestHeader() >> { httpEntityRequest }
 		and:
-
-			1 * httpServerConnectionMock.isOpen() >> false
+			2 * httpServerConnectionMock.isOpen() >> false
 		and:
 			1 * httpServerConnectionMock.receiveRequestEntity(httpEntityRequest)
-		and:
-			1 * httpServerConnectionMock.flush()
-			1 * httpServerConnectionMock.close()
 	}
 
 	@Unroll("Consumer reads #givenHttpMethod request header and finally request body (request entity). Server prepares default HTTP response and send it out via producer")
@@ -307,10 +304,7 @@ class HttpRequestPrimaryConsumerSpec extends Specification {
 			1 * httpConnectionProducer.sendResponse(httpResponseStub, { it instanceof HttpContext && it != null })
 			0 * httpConnectionProducer._
 		and: "The connection is closed by client or server when it's not persistent"
-			1 * httpServerConnectionMock.isOpen() >> false
-		and: "The connection needs to be always flushed and cleared when possible"
-			1 * httpServerConnectionMock.flush()
-			1 * httpServerConnectionMock.close()
+			2 * httpServerConnectionMock.isOpen() >> false
 
 		where:
 			givenHttpMethod | expectedOptionalHttpMethod

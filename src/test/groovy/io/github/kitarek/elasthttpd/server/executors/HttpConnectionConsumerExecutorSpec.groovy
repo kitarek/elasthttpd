@@ -86,4 +86,19 @@ class HttpConnectionConsumerExecutorSpec extends Specification {
 			thrown(NullPointerException)
 	}
 
+	def "Executor allows to stop consuming connections and it doesn't create new threads"() {
+		given:
+			def ConsumerExecutor executorUnderTest = new HttpConnectionConsumerExecutor(1);
+
+		and:
+			def ExecutorService executorServiceMock = Mock()
+			executorUnderTest.manyThreadsExecutor = executorServiceMock
+
+		when:
+			executorUnderTest.terminate()
+
+		then:
+			1 * executorServiceMock.shutdown()
+	}
+
 }

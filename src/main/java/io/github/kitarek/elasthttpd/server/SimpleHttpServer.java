@@ -26,6 +26,7 @@ import static org.apache.commons.lang3.Validate.notNull;
 
 public class SimpleHttpServer implements HttpServer {
 
+	public static final int ONE_SECOND_IN_MILISECONDS = 1000;
 	private final ListenerExecutor executor;
 	private final HttpConnectionListener listener;
 	private final ListeningSocket socket;
@@ -38,5 +39,23 @@ public class SimpleHttpServer implements HttpServer {
 
 	public void start() {
 		executor.execute(listener, socket);
+	}
+
+	public void stop() {
+		listener.stopListening();
+		executor.terminate();
+		socket.stopListening();
+	}
+
+	public void waitUntilStopped() {
+		while (executor.waitForTermination()) {
+			waitOneSecond();
+		}
+	}
+
+	private void waitOneSecond() {
+		try {
+			Thread.sleep(ONE_SECOND_IN_MILISECONDS);
+		} catch (InterruptedException e) {}
 	}
 }

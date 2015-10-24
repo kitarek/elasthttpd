@@ -17,8 +17,24 @@
 
 package io.github.kitarek.elasthttpd.server.networking;
 
+import io.github.kitarek.elasthttpd.commons.Optional;
+
+/**
+ * Simplified representation of server socket.
+ */
 public interface ListeningSocket {
 
-	NewConnection listenForANewConnection();
+	/**
+	 * Listens for a new connection. If new connection is present to it can be serviced. Otherwise if new connection
+	 * is not present then the socket is no more listening for a new connections or no new connection has been catched
+	 * before the socket was closed.
+	 *
+	 * @return The not-null optional reference to interface for operating on a new connection
+	 */
+	Optional<NewConnection> listenForANewConnection();
 
+	/**
+	 * Closes listening socket so it cannot be used anymore.
+	 */
+	void stopListening();
 }

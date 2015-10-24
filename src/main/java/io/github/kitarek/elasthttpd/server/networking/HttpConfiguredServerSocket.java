@@ -17,6 +17,7 @@
 
 package io.github.kitarek.elasthttpd.server.networking;
 
+import io.github.kitarek.elasthttpd.commons.Optional;
 import io.github.kitarek.elasthttpd.commons.OptionalMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +27,8 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.SocketException;
 
+import static io.github.kitarek.elasthttpd.commons.Optional.empty;
+import static io.github.kitarek.elasthttpd.commons.Optional.present;
 import static io.github.kitarek.elasthttpd.server.networking.AddressAndPortReusePolicy.*;
 import static org.apache.commons.lang3.Validate.notNull;
 
@@ -89,12 +92,29 @@ public class HttpConfiguredServerSocket implements ListeningSocket {
 		this.serverSocket = notNull(serverSocket, "Server socket cannot be null");
 	}
 
-	public NewConnection listenForANewConnection() {
+	public Optional<NewConnection> listenForANewConnection() {
 		try {
-			return new HttpNewConnection(serverSocket.accept(), socketConfiguration);
+			final NewConnection newConnection = new HttpNewConnection(serverSocket.accept(), socketConfiguration);
+			return present(newConnection);
 		} catch (IOException e) {
-			logger.error("An I/O error occured when accepting connection");
+			return reactOnInputOutputListenError(e);
+		}
+	}
+
+	private Optional<NewConnection> reactOnInputOutputListenError(IOException e) {
+		if (!serverSocket.isClosed()) {
+			logger.error("An I/O error occured when accepting connection", e);
 			throw new IllegalStateException(e);
+		} else {
+			return empty();
+		}
+	}
+
+	public void stopListening() {
+		try {
+			serverSocket.close();
+		} catch (IOException e) {
+			logger.error("An I/O error occured when closing socket", e);
 		}
 	}
 }

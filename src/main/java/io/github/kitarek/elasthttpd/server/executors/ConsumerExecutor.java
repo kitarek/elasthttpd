@@ -38,4 +38,10 @@ public interface ConsumerExecutor {
 	 *                         other thread
 	 */
 	void execute(HttpConnectionConsumer consumer, NewConnection newConnection);
+
+	/**
+	 * Singal this executor to stop accepting any new task that will be scheduled for execution and tries to stop
+	 * all the active consumer threads if possible.
+	 */
+	void terminate();
 }

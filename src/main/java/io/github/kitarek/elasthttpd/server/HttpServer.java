@@ -18,5 +18,20 @@
 package io.github.kitarek.elasthttpd.server;
 
 public interface HttpServer {
+	/**
+	 * Start HTTP server asynchronously in the background. If you would like to block the execution for the current
+	 * caller thread use {@link #waitUntilStopped()} method after starting server.
+	 */
 	void start();
+
+	/**
+	 * Stop HTTP asynchronous server terminating all listener and connection executors.
+	 */
+	void stop();
+
+	/**
+	 * Wait for server to be stopped until another thread calls stop or any other server termination condition will be
+	 * achieved.
+	 */
+	void waitUntilStopped();
 }

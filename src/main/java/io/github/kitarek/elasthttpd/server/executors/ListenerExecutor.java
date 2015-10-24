@@ -40,7 +40,7 @@ public interface ListenerExecutor {
 	 * {@link #terminate()} method. In some cirumstences the blockage on that operation could be breaked. If you
 	 * would like to wait you should invoke that method once again
 	 *
-	 * @return if there was successful termination (true) or rather abnormal break of awaiting
+	 * @return if there was successful termination (false) or rather abnormal break of awaiting (true)
 	 */
 	boolean waitForTermination();
 

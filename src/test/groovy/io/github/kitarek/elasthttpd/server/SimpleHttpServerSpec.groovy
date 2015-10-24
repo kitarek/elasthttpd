@@ -78,6 +78,38 @@ class SimpleHttpServerSpec extends Specification {
 			1 * executorMock.execute(listener, socket)
 	}
 
+	def 'Http Server can be stopped'() {
+		given:
+			def executorMock = Mock(ListenerExecutor)
+			def listener = dummyListener()
+			def socket = dummySocket()
+			def HttpServer server = new SimpleHttpServer(executorMock, listener, socket)
+
+		when:
+			server.stop();
+
+		then:
+			1 * executorMock.terminate()
+			1 * listener.stopListening()
+			1 * socket.stopListening()
+	}
+
+	def 'Can block caller thread waiting for Http Server to be stopped'() {
+		given:
+			def executorMock = Mock(ListenerExecutor)
+			def listener = dummyListener()
+			def socket = dummySocket()
+			def HttpServer server = new SimpleHttpServer(executorMock, listener, socket)
+
+		when:
+			server.waitUntilStopped();
+
+		then:
+			1 * executorMock.waitForTermination() >> true
+			1 * executorMock.waitForTermination() >> false
+	}
+
+
 	private dummyExecutor() {
 		Mock(ListenerExecutor)
 	}

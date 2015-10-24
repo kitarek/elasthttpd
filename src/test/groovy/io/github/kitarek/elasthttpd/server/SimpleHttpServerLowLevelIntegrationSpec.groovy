@@ -90,28 +90,35 @@ class SimpleHttpServerLowLevelIntegrationSpec extends Specification {
 		httpProcessorCopy
 	}
 
-	@Timeout(15)
+	@Timeout(20)
 	def 'Run server with default HELLO response and request GET method on / request'() {
-		given:
+		given: "Use HttpClient for issuing request to server"
 			RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(30 * 1000).build();
 			CloseableHttpClient httpclient = HttpClientBuilder.create().setDefaultRequestConfig(requestConfig).build();
-			def actualResponse
-		and:
+		and: "Let's instruct server to always respond with HELLO"
 			final HttpServer server = configureSimpleHttpServer(new HttpRequestConsumer() {
 				@Override
 				void consumeRequest(HttpRequest request, HttpResponse response) {
 					response.setEntity(new ByteArrayEntity(getAsciiBytes("HELLO")))
 				}
 			})
-
-		when:
-			def thread = Thread.start {
-				server.start();
-			}
 		and:
+			def actualResponse
+
+		when: "Start server in separate thread"
+			def thread = Thread.start {
+				logger.info("Starting HTTP server");
+				server.start();
+				logger.info("Waiting server to be stopped");
+				server.waitUntilStopped()
+				logger.info("Server has been stopped");
+			}
+		and: "Stop the server and client after 2 seconds"
 			Thread.start {
-				sleep(15000)
+				sleep(2000)
+				logger.info("Stopping HTTP client and HTTP server under test");
 				httpclient.close();
+				server.stop();
 			}
 		and:
 			try {
@@ -138,9 +145,9 @@ class SimpleHttpServerLowLevelIntegrationSpec extends Specification {
 				httpclient.close();
 			}
 		and:
-			logger.info("Stopping the server")
-			thread.interrupt();
-
+			logger.info("Waiting for server to be stopped");
+			server.waitUntilStopped()
+			logger.info("Server has been stopped");
 
 		then:
 			actualResponse == "HELLO"

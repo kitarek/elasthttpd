@@ -23,12 +23,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
+import static java.util.concurrent.TimeUnit.DAYS;
 import static org.apache.commons.lang3.Validate.notNull;
 
-// TODO add termination handling and waiting
 public class HttpConnectionListenerExecutor implements ListenerExecutor {
 
 	public static final Logger logger = LoggerFactory.getLogger(HttpConnectionListenerExecutor.class);
@@ -44,15 +43,18 @@ public class HttpConnectionListenerExecutor implements ListenerExecutor {
 
 	public boolean waitForTermination() {
 		try {
-			oneThreadExecutor.awaitTermination(0, TimeUnit.DAYS);
-			return true;
+			while (!oneThreadExecutor.awaitTermination(1, DAYS)) {
+				logger.debug("Timeout has been reached. Waiting another timeout for termination");
+			};
+			return false;
 		} catch (InterruptedException e) {
 			logger.error("Awaiting for termination was aborted");
-			return false;
+			return true;
 		}
 	}
 
 	public void terminate() {
 		oneThreadExecutor.shutdown();
+		oneThreadExecutor.shutdownNow();
 	}
 }

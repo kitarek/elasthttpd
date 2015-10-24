@@ -42,4 +42,9 @@ public class HttpConnectionConsumerExecutor implements ConsumerExecutor {
 			}
 		});
 	}
+
+	public void terminate() {
+		manyThreadsExecutor.shutdown();
+		manyThreadsExecutor.shutdownNow();
+	}
 }

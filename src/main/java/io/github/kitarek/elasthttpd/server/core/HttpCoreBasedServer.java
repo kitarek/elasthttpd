@@ -40,6 +40,14 @@ public class HttpCoreBasedServer implements io.github.kitarek.elasthttpd.server.
 		startServerAndBlockCurrentThread(server);
 	}
 
+	public void stop() {
+
+	}
+
+	public void waitUntilStopped() {
+
+	}
+
 	private void startServerAndBlockCurrentThread(HttpServer server) {
 		try {
 			server.start();

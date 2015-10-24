@@ -18,6 +18,8 @@
 package io.github.kitarek.elasthttpd.server.listeners;
 
 
+import io.github.kitarek.elasthttpd.commons.Optional;
+import io.github.kitarek.elasthttpd.commons.OptionalMapper;
 import io.github.kitarek.elasthttpd.model.ServerState;
 import io.github.kitarek.elasthttpd.server.consumers.HttpConnectionConsumer;
 import io.github.kitarek.elasthttpd.server.executors.ConsumerExecutor;
@@ -41,6 +43,7 @@ public class SynchronousStoppableHttpConnectionListener implements HttpConnectio
 	}
 
 	public boolean stopListening() {
+		executor.terminate();
 		return state.compareAndSet(RUNNING, STOPPING);
 	}
 
@@ -74,8 +77,12 @@ public class SynchronousStoppableHttpConnectionListener implements HttpConnectio
 	}
 
 	private void listenForANewConnectionAndDelegateItsProcessingToConsumer(ListeningSocket medium) {
-		NewConnection c = medium.listenForANewConnection();
-		executor.execute(consumer, c);
+		Optional<NewConnection> c = medium.listenForANewConnection();
+		c.map(new OptionalMapper<NewConnection>() {
+			public void present(NewConnection newConnection) {
+				executor.execute(consumer, newConnection);
+			}
+		});
 	}
 
 }

@@ -87,6 +87,7 @@ class HttpConfiguredServerSocketSpec extends Specification {
 			empty()                                                                        | 0                            | null
 	}
 
+	// TODO cover exception handling for accept (2nd test)
 	def 'HttpConfiguredServerSocket can be created and can listen accepting and returning a new connection'() {
 		given:
 			def serverSocketFactoryMock = Mock(ServerSocketFactory)
@@ -113,6 +114,31 @@ class HttpConfiguredServerSocketSpec extends Specification {
 			1 * serverSocketMock.accept() >> clientSocket
 		and:
 			newConnection != null
+			newConnection.isPresent()
+	}
+
+	def 'HttpConfiguredServerSocket can stop listening by closing server socket'() {
+		given:
+			def serverSocketFactoryMock = Mock(ServerSocketFactory)
+		and:
+			mockStatic(ServerSocketFactory)
+			EasyMock.expect(ServerSocketFactory.getDefault()).andReturn(serverSocketFactoryMock).once()
+			PowerMock.replayAll()
+		and:
+			def socketConfigurationMock = Mock(SocketConfiguration)
+			socketConfigurationMock.getAddressAndPortReusePolicy() >> empty()
+			socketConfigurationMock.getSocketReceiveBufferSizeInBytes() >> empty()
+		and:
+			def serverSocketMock = Mock(ServerSocket)
+			serverSocketFactoryMock.createServerSocket(_, _, _) >> serverSocketMock
+		and:
+			def ListeningSocket listeningSocket = newHttpConfiguredServerSocket(socketConfigurationMock)
+
+		when:
+			listeningSocket.stopListening()
+
+		then:
+			1 * serverSocketMock.close()
 	}
 
 }

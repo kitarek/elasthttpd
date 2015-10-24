@@ -22,6 +22,8 @@ import spock.lang.Specification
 
 import java.util.concurrent.ExecutorService
 
+import static java.util.concurrent.TimeUnit.DAYS
+
 class HttpConnectionListenerExecutorSpec extends Specification {
 
 	def ListenerExecutor executorUnderTest;
@@ -74,9 +76,24 @@ class HttpConnectionListenerExecutorSpec extends Specification {
 			def status = executorUnderTest.waitForTermination()
 
 		then:
-			1 * executorServiceMock.awaitTermination(0, _)
+			1 * executorServiceMock.awaitTermination(1, DAYS) >> true
 		and:
-			status == true
+			status == false
+	}
+
+	def 'Executor always waits for successfull termination even when internal executor service awaiting has been finished due timeout. The awaiting is resumed each time'() {
+		given:
+			def ExecutorService executorServiceMock = Mock()
+			executorUnderTest.oneThreadExecutor = executorServiceMock
+
+		when:
+			def status = executorUnderTest.waitForTermination()
+
+		then:
+			6 * executorServiceMock.awaitTermination(1, DAYS) >> false
+			1 * executorServiceMock.awaitTermination(1, DAYS) >> true
+		and:
+			status == false
 	}
 
 	def 'Executor waits for successfull termination but it could be breaked by interruption of another thread and the status of waiting operation is false'() {
@@ -88,9 +105,9 @@ class HttpConnectionListenerExecutorSpec extends Specification {
 			def status = executorUnderTest.waitForTermination()
 
 		then:
-			1 * executorServiceMock.awaitTermination(0, _) >> {throw new InterruptedException()}
+			1 * executorServiceMock.awaitTermination(1, DAYS) >> {throw new InterruptedException()}
 		and:
-			status == false
+			status == true
 	}
 
 

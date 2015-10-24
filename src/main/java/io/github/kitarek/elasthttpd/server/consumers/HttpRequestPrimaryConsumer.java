@@ -44,7 +44,7 @@ public class HttpRequestPrimaryConsumer implements HttpConnectionConsumer {
 	public static final ProtocolVersion DEFAULT_PROTOCOL_VERSION = new ProtocolVersion("HTTP", 1, 1);
 	public static final ContentType PLAIN_DEFAULT_CONTENT_TYPE = ContentType.create("text/plain", "US-ASCII");
 
-	private final HttpResponseFactory httpResponseFactory; //DefaultHttpResponseFactory.INSTANCE;
+	private final HttpResponseFactory httpResponseFactory;
 	private final HttpProcessor httpProcessor;
 	private final HttpConnectionProducer httpConnectionProducer;
 	private final HttpRequestConsumer httpRequestConsumer;
@@ -62,8 +62,10 @@ public class HttpRequestPrimaryConsumer implements HttpConnectionConsumer {
 	public void consumeConnection(NewConnection c) {
 		final HttpServerConnection connection = c.acceptAndConfigure();
 		consumeRequestsUntilConnectionIsOpen(connection);
-		flushConnection(connection);
-		closeTheConnection(connection);
+		if (connection.isOpen()) {
+			flushConnection(connection);
+			closeTheConnection(connection);
+		}
 	}
 
 	private void consumeRequestsUntilConnectionIsOpen(HttpServerConnection connection) {
@@ -97,8 +99,11 @@ public class HttpRequestPrimaryConsumer implements HttpConnectionConsumer {
 		} catch (HttpException e) {
 			HttpResponse httpResponse = respondToHttpProtocolLevelException(e, httpContext);
 			httpConnectionProducer.sendResponse(httpResponse, httpContext);
+		} catch (ConnectionClosedException e) {
+			closeTheConnection(connection);
 		} catch (IOException e) {
-			logger.error("There was an I/O level error receiving request header. Cannot continue with current request");
+			logger.error("There was an I/O level error receiving request header. Cannot continue with current request", e);
+			closeTheConnection(connection);
 		}
 		// TODO handle here keep alive
 	}
