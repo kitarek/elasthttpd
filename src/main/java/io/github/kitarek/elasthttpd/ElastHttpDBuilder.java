@@ -18,10 +18,23 @@
 package io.github.kitarek.elasthttpd;
 
 import io.github.kitarek.elasthttpd.server.HttpServer;
+import io.github.kitarek.elasthttpd.server.consumers.HttpRequestConsumer;
+import io.github.kitarek.elasthttpd.server.networking.NetworkConfigurationBuilder;
 
+/**
+ * TODO javadoc
+ */
 public interface ElastHttpDBuilder {
 
+	int DEFAULT_MAXIMUM_NUMBER_OF_CONCURRENT_CONNECTIONS = 10;
+	String DEFAULT_SERVER_INFO_LINE = "ElastHttpD";
+
 	ElastHttpDBuilder serverInfo(String serverInfoLine);
+	ElastHttpDBuilder networkConfiguration(NetworkConfigurationBuilder preconfiguredBuilder);
+	ElastHttpDBuilder customRequestConsumer(HttpRequestConsumer customhttpRequestConsumer);
+	ElastHttpDBuilder concurrentConnections(int maximumNumberOfThreads);
 	HttpServer createAndReturn();
+
 	void run();
+	void runAsync();
 }

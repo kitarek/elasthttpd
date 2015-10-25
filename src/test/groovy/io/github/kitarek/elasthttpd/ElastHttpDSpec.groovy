@@ -31,6 +31,9 @@ class ElastHttpDSpec extends Specification {
 		then:
 			httpd != null
 			httpd instanceof HttpServer
+
+		cleanup: "Unbind used ports"
+			httpd.stop();
 	}
 
 	def 'By default HTTP server runs in current thread at least one second'() {

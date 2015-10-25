@@ -15,12 +15,17 @@
  *
  */
 
-package io.github.kitarek.elasthttpd;
+package io.github.kitarek.elasthttpd.builder;
 
-import io.github.kitarek.elasthttpd.builder.FluentElastHttpDBuilder;
+import io.github.kitarek.elasthttpd.server.consumers.HttpRequestConsumer;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpResponse;
+import org.apache.http.entity.ByteArrayEntity;
 
-public class ElastHttpD {
-	public static ElastHttpDBuilder startBuilding() {
-		return new FluentElastHttpDBuilder();
+import static org.apache.http.util.EncodingUtils.getAsciiBytes;
+
+public class DummyHttpRequestConsumer implements HttpRequestConsumer {
+	public void consumeRequest(HttpRequest request, HttpResponse response) {
+		response.setEntity(new ByteArrayEntity(getAsciiBytes("SELFTEST OK")));
 	}
 }
