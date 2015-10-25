@@ -29,8 +29,6 @@ import static org.apache.commons.lang3.Validate.notNull;
 
 public class BasicValidatedSocketConfiguration implements SocketConfiguration {
 
-	public static final int MAX_PORT_NUMBER = 65535;
-	public static final int MIN_PORT_NUMBER = 1;
 	public static final int DEFAULT_MAXIMUM_NUMBER_OF_CONNECTIONS_IN_QUEUE = 1000;
 	private final InetAddress listeningAddress;
 	private final int listeningPort;

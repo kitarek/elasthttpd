@@ -26,6 +26,16 @@ import java.net.InetAddress;
  */
 public interface SocketConfiguration {
 	/**
+	 * Maximal achievable port number that can be bound by server socket
+	 */
+	int MAX_PORT_NUMBER = 65535;
+
+	/**
+	 * Minimal achievable port number that can be bound by server socket
+	 */
+	int MIN_PORT_NUMBER = 1;
+
+	/**
 	 * Internet address on which server socket is listening
 	 *
 	 * @return always not null reference
