@@ -72,7 +72,7 @@ class OptionalSpec extends Specification {
 			!optionalValue.present
 	}
 
-	def 'Never can access null value/reference after initializing optional value using empty() method'(){
+	def 'Never can access null value/reference after initializing optional value using empty() method'() {
 		when:
 			def optionalValue = empty();
 		and:
@@ -82,7 +82,7 @@ class OptionalSpec extends Specification {
 			thrown(NullPointerException)
 	}
 
-	def 'Never can access null value/reference after initializing optional using optional() method with null value'(){
+	def 'Never can access null value/reference after initializing optional using optional() method with null value'() {
 		when:
 			def optionalValue = optional(null);
 		and:
@@ -226,9 +226,10 @@ class OptionalSpec extends Specification {
 		when:
 			empty1 = empty()
 			empty2 = empty()
+			def equals = empty1.equals(empty2)
 
 		then:
-			empty1 == empty2
+			equals
 	}
 
 	def 'optional(null) always equal to other optional(null)'() {
@@ -239,9 +240,10 @@ class OptionalSpec extends Specification {
 		when:
 			empty1 = optional(null)
 			empty2 = optional(null)
+			def equals = empty1.equals(empty2)
 
 		then:
-			empty1 == empty2
+			equals
 	}
 
 	def 'optional() always equal to other optional() the same value'() {
@@ -252,9 +254,10 @@ class OptionalSpec extends Specification {
 		when:
 			value1 = optional("Text")
 			value2 = optional("Text")
+			def equals = value1.equals(value2)
 
 		then:
-			value1 == value2
+			equals
 	}
 
 	def 'present() always equal to other present() the same value'() {
@@ -265,9 +268,72 @@ class OptionalSpec extends Specification {
 		when:
 			value1 = present("Text")
 			value2 = present("Text")
+			def equals = value1.equals(value2)
 
 		then:
-			value1 == value2
+			equals
+	}
+
+
+	def 'present() for one class never equal to present() with other class or null'() {
+		given:
+			def Optional<Object> value1 = present("250")
+			def Optional<Object> value2 = present(250)
+
+		when:
+			def equals = value1.equals(value2)
+
+		then:
+			!equals
+	}
+
+
+	def 'present() for one class never equal to null'() {
+		given:
+			def Optional<Object> value1 = present("250")
+
+		when:
+			def equals = value1.equals(null)
+
+		then:
+			!equals
+	}
+
+	def 'The same Optional object always equals to the same Optional instance'() {
+		given:
+			def Optional<Object> value = present("250")
+
+		when:
+			def equals = value.equals(value)
+
+		then:
+			equals
+	}
+
+	def 'The hash code of present object is the same as hashcode of object defined as present'() {
+		given:
+			def object = Mock(Object)
+			def optionalString = present(object)
+			def expectedHashCode = 20
+
+		when:
+			def hash = optionalString.hashCode()
+
+		then:
+			1 * object.hashCode() >> expectedHashCode
+			hash == expectedHashCode
+	}
+
+	def 'The hash code of empty optional object is 0'() {
+		given:
+			def optionalString = optional(null)
+			def expectedHashCode = 0
+
+		when:
+			def hash = optionalString.hashCode()
+
+		then:
+			hash == expectedHashCode
 	}
 
 
