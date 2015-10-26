@@ -45,6 +45,8 @@ on which the server listens by default.
 
         http://localhost:18181/
 
+You should see dummy response from so called "dummy" request consumer.
+
 ## The idea behind...
 
 The goal of that server is to easily bootstrap fully-fledged HTTP server
@@ -67,7 +69,8 @@ and integration tests.
 You should be able to find the high-level integration specifications and tests 
 to discover how it works and how it can be used.
 
-For code test coverage use command: `./gradlew clean test jacocoTestReport`
+For the code test coverage use the command:
+`./gradlew clean test jacocoTestReport`
 
 For other tasks refer to: `./gradlew tasks`.
 
@@ -81,8 +84,9 @@ of complicated 3rd party service it would be the best to use facade and
 builders to react only to some interesting HTTP request in terms of 
 `HttpMethod`, URI path or HTTP headers. 
 
-Also the most important response is letting to easily build JSON, XML
-or binary stream to be able to respond to typical REST or other API structure.
+Also the most important in terms of responding to requests is letting to easily
+build JSON, XML or binary stream to be able to respond to typical REST or other
+API structure.
 
 What can be also interesting is a possibility to pass results of HTTP server 
 expectation so whether HTTP client requested properly for a series of response.
@@ -97,4 +101,11 @@ The core is so flexible that there is a still possibility to add plugin engine
 that for some URLs/methods and virtual hosts (like `Host`) could offer web
 file-related server by activating supplied plugin.
 
- 
+The main purpose is to offer the base for HTTP server and the rest should be
+swappable (serving files, microservices, proxies etc).
+
+Obviously the central point of this webserver is the ElastHttpD builder which
+will be improved giving new options and not just only `customRequestConsumer`.
+
+All the other things possibly will be read from other annotated classes that
+could contain: scenarios, custom plugins, rules and expectations.
