@@ -1,0 +1,50 @@
+group 'io.github.kitarek'
+version '0.1-SNAPSHOT'
+
+apply plugin: "jacoco"
+apply plugin: 'groovy'
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'application'
+
+
+sourceCompatibility = 1.5
+
+// The dummy implementation for quick testing
+mainClassName = "io.github.kitarek.elasthttpd.DefaultHttpServer"
+
+repositories {
+	mavenCentral()
+}
+
+configurations {
+	all*.exclude group: 'commons-logging'
+	all*.exclude group: 'log4j'
+}
+
+dependencies {
+	compile 'org.apache.httpcomponents:httpcore:4.4.3'
+	compile 'org.slf4j:slf4j-api:1.7.2'
+	compile 'org.apache.commons:commons-lang3:3.1'
+
+	runtime 'ch.qos.logback:logback-classic:1.0.9'
+	runtime 'org.slf4j:jcl-over-slf4j:1.7.2'
+	runtime 'org.slf4j:log4j-over-slf4j:1.7.2'
+
+	testCompile 'junit:junit:4.11'
+	testCompile 'org.codehaus.groovy:groovy-all:2.3.11'
+	testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
+	testCompile 'org.powermock:powermock-module-junit4:1.6.3'
+	testCompile 'org.powermock:powermock-api-easymock:1.6.3'
+	testCompile 'org.easymock:easymock:3.1'
+	testCompile 'org.powermock:powermock-module-junit4-rule:1.6.3'
+	testCompile 'org.powermock:powermock-classloading-xstream:1.6.3'
+	testCompile 'commons-io:commons-io:2.4'
+	testCompile 'org.apache.httpcomponents:httpclient:4.5'
+	testCompile 'org.slf4j:jcl-over-slf4j:1.7.2'
+	testCompile 'org.slf4j:log4j-over-slf4j:1.7.2'
+
+	testRuntime 'cglib:cglib-nodep:3.1'
+	testRuntime 'org.objenesis:objenesis:2.1'
+
+}
