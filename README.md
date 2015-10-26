@@ -45,7 +45,7 @@ on which the server listens by default.
 
         http://localhost:18181/
 
-## The main purpose
+## The idea behind...
 
 The goal of that server is to easily bootstrap fully-fledged HTTP server
 that can mock many external services responding to a different test related 
@@ -59,7 +59,7 @@ background can make life easier when external dependencies are needed. They can
 be just created on the spot by test itself on the same machine/the same JVM
 the test is invoked.
 
-## How to develop ?
+## The idea under the hood... How to develop ?
 
 Please run: `./gradlew clean test` for compilation and running all the unit 
 and integration tests.
@@ -94,7 +94,7 @@ for such server session could be built.
 ## Why not just normal HttpServer ?
 
 The core is so flexible that there is a still possibility to add plugin engine
-that for some URLs/methods and hosts (like `Host`) could offer web file-related
-server by activating supplied plugin.
+that for some URLs/methods and virtual hosts (like `Host`) could offer web
+file-related server by activating supplied plugin.
 
  
