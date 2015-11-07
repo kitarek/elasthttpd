@@ -17,22 +17,18 @@
 
 package io.github.kitarek.elasthttpd.model;
 
-/**
- * Type of the HttpMethod
- */
-public enum HttpMethodType {
-	/**
-	 * General purpose method not requiring any special encoding or message body in request
-	 */
-	COMMON,
+
+public interface AnyHttpMethod {
+
+	HttpMethodScope getScope();
+	HttpMethodType getType();
 
 	/**
-	 * The method most likely points to use encoded body entity to send additional data
+	 * Get textual string representing reuqets method. In example for GET request it returns 'GET', for PUT
+	 * request it returns 'PUT' etc.
+	 *
+	 * @return always not null string
 	 */
-	ENTITY_ENCODING,
+	String getId();
 
-	/**
-	 * Specialized method most likely not requiring any additional in request
-	 */
-	SPECIAL
 }

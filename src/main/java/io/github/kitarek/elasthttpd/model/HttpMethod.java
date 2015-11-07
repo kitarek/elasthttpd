@@ -26,10 +26,14 @@ import static io.github.kitarek.elasthttpd.model.HttpMethodScope.*;
 import static io.github.kitarek.elasthttpd.model.HttpMethodType.*;
 import static io.github.kitarek.elasthttpd.commons.Optional.optional;
 
-public enum HttpMethod {
+/**
+ * Basic set of the HTTP methods
+ */
+public enum HttpMethod implements AnyHttpMethod {
 	GET("GET", COMMON, WITHOUT_SIDE_EFFECT),
 	POST("POST", ENTITY_ENCODING, CAUSES_SIDE_EFFECT),
 	PUT("PUT", ENTITY_ENCODING, CAUSES_SIDE_EFFECT),
+	PATCH("PATCH", ENTITY_ENCODING, CAUSES_SIDE_EFFECT),
 	HEAD("HEAD", SPECIAL, WITHOUT_SIDE_EFFECT),
 	TRACE("TRACE", SPECIAL, UNKNOWN),
 	OPTIONS("OPTIONS", SPECIAL, WITHOUT_SIDE_EFFECT),
@@ -56,4 +60,17 @@ public enum HttpMethod {
 	public final String id;
 	public final HttpMethodScope scope;
 	public final HttpMethodType type;
+
+	public HttpMethodScope getScope() {
+		return scope;
+	}
+
+	public HttpMethodType getType() {
+		return type;
+	}
+
+	public String getId() {
+		return id;
+	}
+
 }
