@@ -73,12 +73,12 @@ class HttpFileRequestConsumerDispatcher implements HttpRequestConsumer {
 			}
 
 			public void present(final HttpFileRequestConsumer consumer) {
-				doConsume(consumer, request, response);
+				delegateToConsumer(consumer, request, response);
 			}
 		}
 	}
 
-	private void doConsume(HttpFileRequestConsumer consumer, HttpRequest request, HttpResponse response) {
+	private void delegateToConsumer(HttpFileRequestConsumer consumer, HttpRequest request, HttpResponse response) {
 		HttpFileRequest fileRequest = fileRequestFactory.createNew(request, response);
 		consumer.consumeFileRequest(fileRequest);
 	}
