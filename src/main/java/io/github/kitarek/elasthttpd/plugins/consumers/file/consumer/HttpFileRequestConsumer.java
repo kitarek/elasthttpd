@@ -19,7 +19,18 @@ package io.github.kitarek.elasthttpd.plugins.consumers.file.consumer;
 
 import io.github.kitarek.elasthttpd.plugins.consumers.file.request.HttpFileRequest;
 
+/**
+ * Actor that consumes HTTP requests from clients related to file operations (read, write, deletion etc) on server side
+ * The implementation of this interface should be thread-safe. The best pattern is not to hold any internal state
+ * in the implementation.
+ */
 public interface HttpFileRequestConsumer {
 
+	/**
+	 * Consume and process HTTP request related to file server.
+	 * See more {@link HttpFileRequest} for detilas what the file request is.
+	 *
+	 * @param fileRequest always not null instance of HTTP file request
+	 */
 	void consumeFileRequest(HttpFileRequest fileRequest);
 }
