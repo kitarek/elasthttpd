@@ -17,8 +17,30 @@
 
 package io.github.kitarek.elasthttpd.plugins.consumers.file.consumer;
 
-/**
- * Created by kitarek on 07.11.15.
- */
+import io.github.kitarek.elasthttpd.plugins.consumers.file.request.HttpFileRequest;
+
 public class HttpFileRequestConsumerFactory {
+	public HttpFileRequestConsumer createConsumerForReadOperation() {
+		return new HttpFileRequestConsumer() {
+			public void consumeFileRequest(HttpFileRequest fileRequest) {
+				// TODO implement as separate class
+			}
+		};
+	}
+
+	public HttpFileRequestConsumer createConsumerForWriteOperation() {
+		return new HttpFileRequestConsumer() {
+			public void consumeFileRequest(HttpFileRequest fileRequest) {
+				// TODO implement as separate class
+			}
+		};
+	}
+
+	public HttpFileRequestConsumer createConsumerForDeleteOperation() {
+		return new HttpFileRequestConsumer() {
+			public void consumeFileRequest(HttpFileRequest fileRequest) {
+				// TODO implement as separate class
+			}
+		};
+	}
 }
