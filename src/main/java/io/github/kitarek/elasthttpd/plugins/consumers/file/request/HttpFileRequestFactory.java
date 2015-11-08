@@ -22,9 +22,19 @@ import io.github.kitarek.elasthttpd.plugins.consumers.file.mapper.UriToFileMappe
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 
+import static org.apache.commons.lang3.Validate.notNull;
+
 public class HttpFileRequestFactory {
 
-	public HttpFileRequest createNew(HttpRequest request, HttpResponse response, String rootDirectoryPath) {
-		return new PojoHttpFileRequest(request, response, new UriToFileMapper());
+	private final UriToFileMapper mapper;
+
+	public HttpFileRequestFactory(final String rootDirectoryPath) {
+		this.mapper = new UriToFileMapper(notNull(rootDirectoryPath, "Root directory path cannot be null"));
 	}
+
+	public HttpFileRequest createNew(HttpRequest request, HttpResponse response) {
+		return new ImmutableHttpFileRequest(notNull(request, "HTTP request cannot be null"),
+				notNull(response, "HTTP response cannot be null"), mapper);
+	}
+
 }
