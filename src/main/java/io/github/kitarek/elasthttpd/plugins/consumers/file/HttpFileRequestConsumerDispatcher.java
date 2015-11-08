@@ -29,32 +29,19 @@ import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 
-import java.io.File;
-
-import static org.apache.commons.lang3.Validate.isTrue;
 import static org.apache.commons.lang3.Validate.notNull;
 import static org.apache.http.HttpStatus.SC_NOT_IMPLEMENTED;
 
-class HttpDirectoryMappedFileRequestConsumer implements HttpRequestConsumer {
+class HttpFileRequestConsumerDispatcher implements HttpRequestConsumer {
 
-	private final String rootDirectoryPath;
 	private final HttpFileRequestFactory fileRequestFactory;
 	private final HttpFileRequestConsumerSelector consumerSelector;
 
-	public HttpDirectoryMappedFileRequestConsumer(String rootDirectoryPath,
-												  HttpFileRequestFactory httpFileRequestFactory,
-												  HttpFileRequestConsumerSelector httpFileRequestConsumerSelector) {
-		this.rootDirectoryPath = notNull(rootDirectoryPath, "Root directory path cannot be null");
-		File baseDirectoryPathFileObject = new File(rootDirectoryPath);
-		isTrue(isValidExistingAbsoluteDirectory(baseDirectoryPathFileObject),
-				"The following directory must exist and be readable", rootDirectoryPath);
+	public HttpFileRequestConsumerDispatcher(HttpFileRequestFactory httpFileRequestFactory,
+											 HttpFileRequestConsumerSelector httpFileRequestConsumerSelector) {
 		this.fileRequestFactory = notNull(httpFileRequestFactory, "HttpFileRequestFactory instance must be not null");
 		this.consumerSelector = notNull(httpFileRequestConsumerSelector,
 				"HttpFileRequestConsumerSelector instance must be not null");
-	}
-
-	private boolean isValidExistingAbsoluteDirectory(File f) {
-		return f.canRead() && f.exists() && f.isAbsolute() && f.isDirectory();
 	}
 
 	public void consumeRequest(final HttpRequest request, final HttpResponse response) {
@@ -92,7 +79,7 @@ class HttpDirectoryMappedFileRequestConsumer implements HttpRequestConsumer {
 	}
 
 	private void doConsume(HttpFileRequestConsumer consumer, HttpRequest request, HttpResponse response) {
-		HttpFileRequest fileRequest = fileRequestFactory.createNew(request, response, rootDirectoryPath);
+		HttpFileRequest fileRequest = fileRequestFactory.createNew(request, response);
 		consumer.consumeFileRequest(fileRequest);
 	}
 

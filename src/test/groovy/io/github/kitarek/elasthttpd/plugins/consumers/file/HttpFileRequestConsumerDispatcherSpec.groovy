@@ -29,68 +29,35 @@ import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
 
-import java.nio.file.Path
-import java.nio.file.Paths
-
 import static io.github.kitarek.elasthttpd.commons.Optional.empty
 import static io.github.kitarek.elasthttpd.commons.Optional.present
-import static java.util.UUID.randomUUID
 import static org.apache.http.HttpStatus.SC_METHOD_NOT_ALLOWED
 import static org.apache.http.HttpStatus.SC_NOT_IMPLEMENTED
 
-class HttpDirectoryMappedFileRequestConsumerSpec extends Specification {
+class HttpFileRequestConsumerDispatcherSpec extends Specification {
 
 	@Unroll
 	def 'Never cannot create class instance given null constructor arguments'() {
 		when:
-			new HttpDirectoryMappedFileRequestConsumer(rootDirectoryPath, requestFactory, consumerSelector)
+			new HttpFileRequestConsumerDispatcher(requestFactory, consumerSelector)
 
 		then:
 			thrown(NullPointerException)
 
 		where:
-			rootDirectoryPath        | requestFactory  | consumerSelector
-			validExistingDirectory() | null            | null
-			null                     | mockedFactory() | null
-			null                     | null            | mockedSelector()
-			validExistingDirectory() | mockedFactory() | null
-			validExistingDirectory() | null            | mockedSelector()
-			null                     | mockedFactory() | mockedSelector()
-			validExistingDirectory() | mockedFactory() | null
-			null                     | null            | null
+			requestFactory  | consumerSelector
+			null            | null
+			mockedFactory() | null
+			null            | mockedSelector()
 	}
 
-
-	def 'Never cannot create class instance given not existing directory'() {
-		when:
-			new HttpDirectoryMappedFileRequestConsumer("./not/existing/directory/" + randomUUID(),
-				mockedFactory(), mockedSelector())
-
-		then:
-			thrown(IllegalArgumentException)
-	}
-
-	def 'Never cannot create class instance given relative directory even if exists'() {
-		when:
-			new HttpDirectoryMappedFileRequestConsumer(".", mockedFactory(), mockedSelector())
-
-		then:
-			thrown(IllegalArgumentException)
-	}
-
-	def 'Always can create class instance given absolute and existeing directory'() {
+	def 'Always can create class instance not null constructor dependencies'() {
 		given:
-			def currentWorkingDirectory = validExistingDirectory()
-			File currentWorkingDirectoryFileObject = new File(currentWorkingDirectory)
-		and:
 			def mockedSelector = mockedSelector()
 			def mockedFactory = mockedFactory()
 
-		expect: "current directory should always exists in normal circumstances"
-			currentWorkingDirectoryFileObject.exists() && currentWorkingDirectoryFileObject.canRead()
-
 		when:
-			new HttpDirectoryMappedFileRequestConsumer(currentWorkingDirectory, mockedFactory, mockedSelector)
+			new HttpFileRequestConsumerDispatcher(mockedFactory, mockedSelector)
 
 		then:
 			notThrown()
@@ -101,9 +68,8 @@ class HttpDirectoryMappedFileRequestConsumerSpec extends Specification {
 		given:
 			def factory = Mock(HttpFileRequestFactory)
 			def selector = Mock(HttpFileRequestConsumerSelector)
-			def directory = validExistingDirectory()
 		and:
-			def HttpRequestConsumer consumer = new HttpDirectoryMappedFileRequestConsumer(directory, factory, selector)
+			def HttpRequestConsumer consumer = new HttpFileRequestConsumerDispatcher(factory, selector)
 		and:
 			def request = Stub(HttpRequest)
 			def response = Mock(HttpResponse)
@@ -126,9 +92,8 @@ class HttpDirectoryMappedFileRequestConsumerSpec extends Specification {
 		given:
 			def factory = Mock(HttpFileRequestFactory)
 			def selector = Stub(HttpFileRequestConsumerSelector)
-			def directory = validExistingDirectory()
 		and:
-			def HttpRequestConsumer consumer = new HttpDirectoryMappedFileRequestConsumer(directory, factory, selector)
+			def HttpRequestConsumer consumer = new HttpFileRequestConsumerDispatcher(factory, selector)
 		and:
 			def request = Stub(HttpRequest)
 			def response = Mock(HttpResponse)
@@ -145,7 +110,7 @@ class HttpDirectoryMappedFileRequestConsumerSpec extends Specification {
 			consumer.consumeRequest(request, response)
 
 		then:
-			1 * factory.createNew(request, response, directory) >> Mock(HttpFileRequest)
+			1 * factory.createNew(request, response) >> Mock(HttpFileRequest)
 			0 * factory._
 	}
 
@@ -153,9 +118,8 @@ class HttpDirectoryMappedFileRequestConsumerSpec extends Specification {
 		given:
 			def factory = Mock(HttpFileRequestFactory)
 			def selector = Mock(HttpFileRequestConsumerSelector)
-			def directory = validExistingDirectory()
 		and:
-			def HttpRequestConsumer consumer = new HttpDirectoryMappedFileRequestConsumer(directory, factory, selector)
+			def HttpRequestConsumer consumer = new HttpFileRequestConsumerDispatcher(factory, selector)
 		and:
 			def request = Stub(HttpRequest)
 			def response = Mock(HttpResponse)
@@ -180,9 +144,8 @@ class HttpDirectoryMappedFileRequestConsumerSpec extends Specification {
 		given:
 			def factory = Mock(HttpFileRequestFactory)
 			def selector = Stub(HttpFileRequestConsumerSelector)
-			def directory = validExistingDirectory()
 		and:
-			def HttpRequestConsumer consumer = new HttpDirectoryMappedFileRequestConsumer(directory, factory, selector)
+			def HttpRequestConsumer consumer = new HttpFileRequestConsumerDispatcher(factory, selector)
 		and:
 			def request = Stub(HttpRequest)
 			def response = Mock(HttpResponse)
@@ -208,11 +171,9 @@ class HttpDirectoryMappedFileRequestConsumerSpec extends Specification {
 	def 'Always allow consumer to consume file request if consumer is returned from selector'() {
 		given:
 			def factory = Stub(HttpFileRequestFactory)
-		and:
 			def selector = Stub(HttpFileRequestConsumerSelector)
-			def directory = validExistingDirectory()
 		and:
-			def HttpRequestConsumer consumer = new HttpDirectoryMappedFileRequestConsumer(directory, factory, selector)
+			def HttpRequestConsumer consumer = new HttpFileRequestConsumerDispatcher(factory, selector)
 			def fileRequestConsumer = Mock(HttpFileRequestConsumer)
 		and:
 			def request = Stub(HttpRequest)
@@ -223,7 +184,7 @@ class HttpDirectoryMappedFileRequestConsumerSpec extends Specification {
 			def fileRequestMock = Mock(HttpFileRequest)
 			selector.selectConsumer(httpMethod) >> present(fileRequestConsumer)
 			selector.selectConsumer(_) >> empty()
-			factory.createNew(request, response, directory) >> fileRequestMock
+			factory.createNew(request, response) >> fileRequestMock
 		and:
 			def httpMethodId = httpMethod.id
 			request.getRequestLine() >> requestLine
@@ -234,12 +195,6 @@ class HttpDirectoryMappedFileRequestConsumerSpec extends Specification {
 
 		then:
 			1 * fileRequestConsumer.consumeFileRequest(fileRequestMock)
-	}
-
-	@Shared
-	private validExistingDirectory = {
-		Path currentRelativePath = Paths.get("");
-		currentRelativePath.toAbsolutePath().toString();
 	}
 
 	@Shared
