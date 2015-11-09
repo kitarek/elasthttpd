@@ -73,6 +73,17 @@ class UriToFileMapperSpec extends Specification {
 			relativeDir << [".", "./"]
 	}
 
+	def 'Never cannot create class instance given absolute file even if exists'() {
+		given:
+			def existingFileInProject = "/build.gradle"
+
+		when:
+			new UriToFileMapper(validExistingDirectory() + existingFileInProject)
+
+		then:
+			thrown(IllegalArgumentException)
+	}
+
 	def 'Never cannot create class instance given empty directory path even if this means sth'() {
 		when:
 			new UriToFileMapper("")
