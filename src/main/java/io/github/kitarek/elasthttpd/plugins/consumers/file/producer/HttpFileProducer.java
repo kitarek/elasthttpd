@@ -17,26 +17,23 @@
 
 package io.github.kitarek.elasthttpd.plugins.consumers.file.producer;
 
+import io.github.kitarek.elasthttpd.commons.MimeTypeDetector;
 import io.github.kitarek.elasthttpd.commons.Optional;
 import io.github.kitarek.elasthttpd.commons.OptionalDispatcher;
+import io.github.kitarek.elasthttpd.commons.TemplatedHttpResponder;
 import org.apache.http.HttpResponse;
-import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.InputStreamEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 import static io.github.kitarek.elasthttpd.commons.Optional.empty;
 import static io.github.kitarek.elasthttpd.commons.Optional.present;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.Validate.isTrue;
 import static org.apache.commons.lang3.Validate.notNull;
-import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
-import static org.apache.http.util.EncodingUtils.getAsciiBytes;
 
 /**
  * Allows to setup HTTP response that will send over HTTP protocol an existing file from local filesystem using
@@ -48,6 +45,13 @@ public class HttpFileProducer {
 
 	public static final Logger LOGGER = LoggerFactory.getLogger(HttpFileProducer.class);
 	public static final int STREAM_BUFFER_100KB_SIZE = 102400;
+	private final MimeTypeDetector mimeTypeDetector;
+	private final TemplatedHttpResponder templatedHttpResponder;
+
+	public HttpFileProducer(MimeTypeDetector mimeTypeDetector, TemplatedHttpResponder templatedHttpResponder) {
+		this.mimeTypeDetector = notNull(mimeTypeDetector, "Mime Type Detector cannot be null");
+		this.templatedHttpResponder = notNull(templatedHttpResponder, "Templated HTTP responder cannot be null");
+	}
 
 	/**
 	 * Transform HttpResponse in such way it will contain the specified file as HTTP entity.
@@ -64,8 +68,7 @@ public class HttpFileProducer {
 		isTrue(!localFile.isDirectory(), "The local file must not be a directory: %s", localFile);
 		isTrue(localFile.canRead(), "The local file must be at least readable: %s", localFile);
 
-
-		final Optional<String> optionalContentType = detectMimeContentType(localFile);
+		final Optional<String> optionalContentType = mimeTypeDetector.detectMimeContentType(localFile);
 		final Optional<InputStream> optionalInputStreamFromFile = transformFileIntoInputStream(localFile);
 		final FileEntityMetadata fileEntityMetadata = new FileEntityMetadata(optionalContentType, localFile.length());
 		sendInputStreamOverHttpResponse(optionalInputStreamFromFile, response, fileEntityMetadata);
@@ -76,7 +79,8 @@ public class HttpFileProducer {
 												 final FileEntityMetadata fileEntityMetadata) {
 		optionalInputStreamFromFile.dispatch(new OptionalDispatcher<InputStream>() {
 			public void notPresent() {
-				setupInternalServerErrorResponse(response);
+				templatedHttpResponder.respondWithInternalServerError(response,
+						"Internal Server Error while opening/reading server resource");
 			}
 
 			public void present(InputStream inputStream) {
@@ -113,27 +117,6 @@ public class HttpFileProducer {
 			}
 		});
 	}
-
-	private Optional<String> detectMimeContentType(File localFile) {
-		Optional<String> optionalContentType;
-		try {
-			String contentType = Files.probeContentType(Paths.get(localFile.getAbsolutePath()));
-			optionalContentType = present(contentType);
-		} catch (IOException e) {
-			optionalContentType = empty();
-			LOGGER.warn("There was an error checking file content type", e);
-		}
-		return optionalContentType;
-	}
-
-	private void setupInternalServerErrorResponse(HttpResponse response) {
-		response.setStatusCode(SC_INTERNAL_SERVER_ERROR);
-		response.setReasonPhrase("INTERNAL SERVER ERROR");
-		response.setEntity(new ByteArrayEntity(getAsciiBytes(
-				"Internal Server Error while opening/reading server resource"),
-				ContentType.create("text/plain", "US-ASCII")));
-	}
-
 
 	private static class FileEntity {
 		private final InputStream inputStreamFromFile;
