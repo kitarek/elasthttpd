@@ -28,6 +28,8 @@ import io.github.kitarek.elasthttpd.server.consumers.HttpRequestConsumer;
  *
  * Moreover the good practice is to create at least one custom static method that will return the builder implementation
  * class that will allow to create quickly instance of this builder.
+ *
+ * See {@link io.github.kitarek.elasthttpd.plugins.consumers.file.FileServerPluginBuilder} for reference.
  */
 public interface ConsumerPluginBuilder {
 
