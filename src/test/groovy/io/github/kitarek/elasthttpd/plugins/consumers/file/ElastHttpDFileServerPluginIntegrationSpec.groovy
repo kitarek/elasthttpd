@@ -40,7 +40,7 @@ import static io.github.kitarek.elasthttpd.server.networking.NetworkConfiguratio
 import static java.nio.charset.StandardCharsets.UTF_8
 
 class ElastHttpDFileServerPluginIntegrationSpec extends Specification {
-	public static final Logger logger = LoggerFactory.getLogger(ElastHttpDFileServerPluginIntegrationSpec.class);
+	public static final Logger LOGGER = LoggerFactory.getLogger(ElastHttpDFileServerPluginIntegrationSpec.class);
 	public static final int HTTP_SERVER_PORT_NUMBER = 8900;
 
 	@Timeout(20)
@@ -65,12 +65,12 @@ class ElastHttpDFileServerPluginIntegrationSpec extends Specification {
 				newConfiguration().setListeningPort(HTTP_SERVER_PORT_NUMBER))
 				.createAndReturn()
 		and: "Start server in separate thread"
-			logger.info("Starting HTTP server");
+			LOGGER.info("Starting HTTP server");
 			server.start();
 		and: "Stop the server and client after 2 seconds"
 			Thread.start {
 				sleep(2000)
-				logger.info("Stopping HTTP client and HTTP server under test");
+				LOGGER.info("Stopping HTTP client and HTTP server under test");
 				httpclient.close();
 				server.stop();
 			}
@@ -81,7 +81,7 @@ class ElastHttpDFileServerPluginIntegrationSpec extends Specification {
 					@Override
 					public String handleResponse(
 							final HttpResponse response) throws ClientProtocolException, IOException {
-						logger.info("Handling response");
+						LOGGER.info("Handling response");
 						int status = response.getStatusLine().getStatusCode();
 						if (status >= 200 && status < 300) {
 							HttpEntity entity = response.getEntity();
@@ -91,15 +91,15 @@ class ElastHttpDFileServerPluginIntegrationSpec extends Specification {
 						}
 					}
 				};
-				logger.info("Executing request to server...")
+				LOGGER.info("Executing request to server...")
 				actualResponse = httpclient.execute(httpget, responseHandler);
 			} finally {
 				httpclient.close();
 			}
 		and:
-			logger.info("Waiting for server to be stopped");
+			LOGGER.info("Waiting for server to be stopped");
 			server.waitUntilStopped()
-			logger.info("Server has been stopped");
+			LOGGER.info("Server has been stopped");
 
 		then:
 			actualResponse == expectedResponse
