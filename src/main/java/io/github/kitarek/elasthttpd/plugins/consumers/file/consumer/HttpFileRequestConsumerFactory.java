@@ -17,15 +17,18 @@
 
 package io.github.kitarek.elasthttpd.plugins.consumers.file.consumer;
 
+import io.github.kitarek.elasthttpd.commons.MimeTypeDetector;
+import io.github.kitarek.elasthttpd.commons.TemplatedHttpResponder;
+import io.github.kitarek.elasthttpd.plugins.consumers.file.producer.HttpFileProducer;
 import io.github.kitarek.elasthttpd.plugins.consumers.file.request.HttpFileRequest;
 
 public class HttpFileRequestConsumerFactory {
+
 	public HttpFileRequestConsumer createConsumerForReadOperation() {
-		return new HttpFileRequestConsumer() {
-			public void consumeFileRequest(HttpFileRequest fileRequest) {
-				// TODO implement as separate class
-			}
-		};
+		MimeTypeDetector mimeTypeDetector = new MimeTypeDetector();
+		TemplatedHttpResponder templatedHttpResponder = new TemplatedHttpResponder();
+		HttpFileProducer httpFileProducer = new HttpFileProducer(mimeTypeDetector, templatedHttpResponder);
+		return new HttpFileReadRequestConsumer(httpFileProducer);
 	}
 
 	public HttpFileRequestConsumer createConsumerForWriteOperation() {

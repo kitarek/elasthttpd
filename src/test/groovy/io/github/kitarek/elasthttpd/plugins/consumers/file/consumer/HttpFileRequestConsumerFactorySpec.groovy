@@ -37,6 +37,7 @@ class HttpFileRequestConsumerFactorySpec extends Specification {
 
 		then:
 			consumer != null
+			consumer instanceof HttpFileReadRequestConsumer
 	}
 
 	def 'Always can create write operation file request consumer'() {
