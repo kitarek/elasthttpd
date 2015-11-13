@@ -47,6 +47,21 @@ on which the server listens by default.
 
 You should see dummy response from so called "dummy" request consumer.
 
+For file server functionality you need to use *built-in plugin* called fileServer.
+There is a default runner for Gradle that by default serves the project
+directory (this is the root webserver directory).
+
+To browse project files via server just run:
+
+        ./gradlew clean test jacocoTestReport runFileServer
+
+and try to access:
+
+        http://localhost:18181/build/reports/jacoco/test/html/index.html
+
+You should see this project *unit test coverage report*. You should also
+be able to click on different links.
+
 ## The idea behind...
 
 The goal of that server is to easily bootstrap fully-fledged HTTP server
@@ -60,6 +75,37 @@ Quick learning curve for starting HTTP server in the foreground and in the
 background can make life easier when external dependencies are needed. They can
 be just created on the spot by test itself on the same machine/the same JVM
 the test is invoked.
+
+## Pluggable behavior of server. Infinite possibilities...
+
+The server supports pluggable architecture of request consumers so you can
+do with them whatever you like - in example you can server file from server
+using built-in file server functionality.
+
+Instead of using `customRequestConsumer` passing handler class you need
+to decalre correct plugin builder.
+
+See real life example that works:
+
+        ElastHttpD
+            .startBuilding()
+            .consumeRequestsWithPlugin(
+                 fileServer().withRootServerDirectory(currentDirectory())
+            )
+            .runAsync()
+
+The fileServer() method comes from:
+
+ `io.github.kitarek.elasthttpd.plugins.consumers.file.FileServerPluginBuilder`
+
+...and this plugin it's built into server core functionality.
+
+You can write your own extensions and plugins (see fileServer plugin for
+reference how to write them) and compose or nest them in each other to
+achieve what you like.
+
+Imagine virtual host plugin that can be used for each domain differently
+composing fileServer plugins in a different way.
 
 ## The idea under the hood... How to develop ?
 
@@ -95,17 +141,17 @@ In general the final solution is too let you quickly build significant number
 of scenarios for which some expectations will be defined and the report
 for such server session could be built.
 
+This can be now achieved writing dedicated plugin that will handle such
+expectation as a part of builder pattern.
+
 ## Why not just normal HttpServer ?
 
-The core is so flexible that there is a still possibility to add plugin engine
+The core is so flexible that there is a still possibility to add new plugins
 that for some URLs/methods and virtual hosts (like `Host`) could offer web
 file-related server by activating supplied plugin.
 
 The main purpose is to offer the base for HTTP server and the rest should be
 swappable (serving files, microservices, proxies etc).
 
-Obviously the central point of this webserver is the ElastHttpD builder which
-will be improved giving new options and not just only `customRequestConsumer`.
-
-All the other things possibly will be read from other annotated classes that
-could contain: scenarios, custom plugins, rules and expectations.
+Obviously the central point of this webserver is the ElastHttpD builder where
+you can compose and build/nest differnet plugins.
