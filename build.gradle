@@ -52,3 +52,33 @@ dependencies {
 	testRuntime 'org.objenesis:objenesis:2.1'
 
 }
+
+checkstyleMain << {
+	ant.xslt(in: reports.xml.destination,
+			style: new File('config/checkstyle/checkstyle.xsl'),
+			out: new File(reports.xml.destination.parent, 'main.html'))
+}
+
+findbugsMain {
+	ignoreFailures = true
+}
+
+pmdMain << {
+	source 'src'
+	include '**/*.java'
+
+	reports {
+		xml.enabled = false
+		html.enabled = true
+	}
+
+	ruleSets = ["basic", "braces", "junit", "design" ]
+	ignoreFailures = true
+}
+
+tasks.withType(FindBugs) {
+	reports {
+		xml.enabled = false
+		html.enabled = true
+	}
+}
