@@ -24,9 +24,14 @@ import io.github.kitarek.elasthttpd.plugins.consumers.file.request.HttpFileReque
 
 public class HttpFileRequestConsumerFactory {
 
+	private TemplatedHttpResponder templatedHttpResponder;
+
+	public HttpFileRequestConsumerFactory() {
+		templatedHttpResponder = new TemplatedHttpResponder();
+	}
+
 	public HttpFileRequestConsumer createConsumerForReadOperation() {
 		MimeTypeDetector mimeTypeDetector = new MimeTypeDetector();
-		TemplatedHttpResponder templatedHttpResponder = new TemplatedHttpResponder();
 		HttpFileProducer httpFileProducer = new HttpFileProducer(mimeTypeDetector, templatedHttpResponder);
 		return new HttpFileReadRequestConsumer(httpFileProducer);
 	}
@@ -40,10 +45,6 @@ public class HttpFileRequestConsumerFactory {
 	}
 
 	public HttpFileRequestConsumer createConsumerForDeleteOperation() {
-		return new HttpFileRequestConsumer() {
-			public void consumeFileRequest(HttpFileRequest fileRequest) {
-				// TODO implement as separate class
-			}
-		};
+		return new HttpFileDeleteRequestConsumer(templatedHttpResponder);
 	}
 }

@@ -60,6 +60,7 @@ class HttpFileRequestConsumerFactorySpec extends Specification {
 
 		then:
 			consumer != null
+			consumer instanceof HttpFileDeleteRequestConsumer
 	}
 
 }
