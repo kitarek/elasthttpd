@@ -174,4 +174,28 @@ class TemplatedHttpResponderSpec extends Specification {
 			outputStream.toString() == message
 	}
 
+
+	def 'Cannot set code and reason if "DELETED" template is used with null response'() {
+		given:
+			def TemplatedHttpResponder responder = new TemplatedHttpResponder()
+
+		when:
+			responder.respondWithNoContentAndReasonDeleted(null)
+
+		then:
+			thrown(NullPointerException)
+	}
+
+	def 'Set correct status code and reason if "DELETE" template is used'() {
+		given:
+			def TemplatedHttpResponder responder = new TemplatedHttpResponder()
+			def HttpResponse response = Mock()
+
+		when:
+			responder.respondWithNoContentAndReasonDeleted(response)
+
+		then:
+			1 * response.setStatusCode(HttpStatus.SC_NO_CONTENT)
+			1 * response.setReasonPhrase("DELETED")
+	}
 }

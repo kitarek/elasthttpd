@@ -23,9 +23,7 @@ import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 
 import static org.apache.commons.lang3.Validate.notNull;
-import static org.apache.http.HttpStatus.SC_FORBIDDEN;
-import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
-import static org.apache.http.HttpStatus.SC_NOT_FOUND;
+import static org.apache.http.HttpStatus.*;
 import static org.apache.http.util.EncodingUtils.getAsciiBytes;
 
 public class TemplatedHttpResponder {
@@ -49,6 +47,11 @@ public class TemplatedHttpResponder {
 		response.setStatusCode(SC_FORBIDDEN);
 		response.setReasonPhrase("FORBIDDEN");
 		setupAsciiUsStringAsResponseEntity(response, message);
+	}
+
+	public void respondWithNoContentAndReasonDeleted(HttpResponse response) {
+		response.setStatusCode(SC_NO_CONTENT);
+		response.setReasonPhrase("DELETED");
 	}
 
 	private void validateResponseAndMessage(HttpResponse response, String message) {
