@@ -23,17 +23,43 @@ import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 
 import static org.apache.commons.lang3.Validate.notNull;
+import static org.apache.http.HttpStatus.SC_FORBIDDEN;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
+import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.util.EncodingUtils.getAsciiBytes;
 
 public class TemplatedHttpResponder {
 
 	public void respondWithInternalServerError(HttpResponse response, String message) {
-		notNull(response, "HttpResponse to use with template must be not null");
-		notNull(message, "Message to use in tempalte must be not null");
+		validateResponseAndMessage(response, message);
 		response.setStatusCode(SC_INTERNAL_SERVER_ERROR);
 		response.setReasonPhrase("INTERNAL SERVER ERROR");
+		setupAsciiUsStringAsResponseEntity(response, message);
+	}
+
+	public void respondWithResourceNotFound(HttpResponse response, String message) {
+		validateResponseAndMessage(response, message);
+		response.setStatusCode(SC_NOT_FOUND);
+		response.setReasonPhrase("NOT FOUND");
+		setupAsciiUsStringAsResponseEntity(response, message);
+	}
+
+	public void respondWithResourceForbidden(HttpResponse response, String message) {
+		validateResponseAndMessage(response, message);
+		response.setStatusCode(SC_FORBIDDEN);
+		response.setReasonPhrase("FORBIDDEN");
+		setupAsciiUsStringAsResponseEntity(response, message);
+	}
+
+	private void validateResponseAndMessage(HttpResponse response, String message) {
+		notNull(response, "HttpResponse to use with template must be not null");
+		notNull(message, "Message to use in template must be not null");
+	}
+
+	private void setupAsciiUsStringAsResponseEntity(HttpResponse response, String message) {
 		response.setEntity(new ByteArrayEntity(getAsciiBytes(message),
 				ContentType.create("text/plain", "US-ASCII")));
 	}
+
+
 }

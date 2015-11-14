@@ -78,4 +78,100 @@ class TemplatedHttpResponderSpec extends Specification {
 		then:
 			outputStream.toString() == message
 	}
+
+
+	@Unroll
+	def 'Cannot set entity if Not Found template is used with null response or message'() {
+		given:
+			def TemplatedHttpResponder responder = new TemplatedHttpResponder()
+
+		when:
+			responder.respondWithResourceNotFound(response, message)
+
+		then:
+			thrown(NullPointerException)
+
+		where:
+			response           | message
+			null               | ""
+			Mock(HttpResponse) | null
+			null               | null
+	}
+
+	def 'Set entity to specified message with correct status code and reason if "Not Found" template is used'() {
+		given:
+			def TemplatedHttpResponder responder = new TemplatedHttpResponder()
+			def HttpResponse response = Mock()
+			def catchedEntity
+			def message = "M"
+
+		when:
+			responder.respondWithResourceNotFound(response, message)
+
+		then:
+			1 * response.setStatusCode(HttpStatus.SC_NOT_FOUND)
+			1 * response.setReasonPhrase("NOT FOUND")
+			1 * response.setEntity(_) >> { args ->
+				catchedEntity = args[0]
+			}
+		and:
+			catchedEntity != null
+			catchedEntity instanceof ByteArrayEntity
+
+		when:
+			def ByteArrayEntity catchedByteArrayEntity = catchedEntity
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream()
+			catchedByteArrayEntity.writeTo(outputStream)
+
+		then:
+			outputStream.toString() == message
+	}
+
+	@Unroll
+	def 'Cannot set entity if Resource Forbidden template is used with null response or message'() {
+		given:
+			def TemplatedHttpResponder responder = new TemplatedHttpResponder()
+
+		when:
+			responder.respondWithResourceForbidden(response, message)
+
+		then:
+			thrown(NullPointerException)
+
+		where:
+			response           | message
+			null               | ""
+			Mock(HttpResponse) | null
+			null               | null
+	}
+
+	def 'Set entity to specified message with correct status code and reason if "Resource Forbidden" template is used'() {
+		given:
+			def TemplatedHttpResponder responder = new TemplatedHttpResponder()
+			def HttpResponse response = Mock()
+			def catchedEntity
+			def message = "M"
+
+		when:
+			responder.respondWithResourceForbidden(response, message)
+
+		then:
+			1 * response.setStatusCode(HttpStatus.SC_FORBIDDEN)
+			1 * response.setReasonPhrase("FORBIDDEN")
+			1 * response.setEntity(_) >> { args ->
+				catchedEntity = args[0]
+			}
+		and:
+			catchedEntity != null
+			catchedEntity instanceof ByteArrayEntity
+
+		when:
+			def ByteArrayEntity catchedByteArrayEntity = catchedEntity
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream()
+			catchedByteArrayEntity.writeTo(outputStream)
+
+		then:
+			outputStream.toString() == message
+	}
+
 }
