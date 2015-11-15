@@ -19,6 +19,7 @@ package io.github.kitarek.elasthttpd.plugins.consumers.file.consumer
 import io.github.kitarek.elasthttpd.commons.TemplatedHttpResponder
 import io.github.kitarek.elasthttpd.plugins.consumers.file.mapper.UriToFileMapper
 import io.github.kitarek.elasthttpd.plugins.consumers.file.request.HttpFileRequest
+import org.apache.http.HttpEntity
 import org.apache.http.HttpEntityEnclosingRequest
 import org.apache.http.HttpRequest
 import org.apache.http.HttpResponse
@@ -208,7 +209,6 @@ class HttpFileWriteRequestConsumerSpec extends Specification {
 		given:
 			def responderMock = Mock(TemplatedHttpResponder)
 			def HttpFileRequestConsumer consumer = new HttpFileWriteRequestConsumer(responderMock)
-			def HttpFileRequest fileRequest = Stub()
 			def File file = Mock()
 			def OutputStream outputStream = Mock()
 
@@ -216,6 +216,58 @@ class HttpFileWriteRequestConsumerSpec extends Specification {
 			consumer.closeTheStream(outputStream, file)
 
 		then:
+			1 * outputStream.close() >> {
+				throw new IOException();
+			}
+		and:
+			notThrown()
+	}
+
+	def 'Write the stream itself is not fatal for request processing'() {
+		given:
+			def responderMock = Mock(TemplatedHttpResponder)
+			def HttpFileRequestConsumer consumer = new HttpFileWriteRequestConsumer(responderMock)
+			def File file = Mock()
+			def OutputStream outputStream = Mock()
+			def HttpEntity entity = Mock()
+
+		when:
+			consumer.writeAndFlush(file, entity, outputStream)
+
+		then:
+			1 * entity.writeTo(outputStream) >> {
+				throw new IOException();
+			}
+		and:
+			1 * outputStream.flush() >> {
+				throw new IOException();
+			}
+		and:
+			1 * outputStream.close() >> {
+				throw new IOException();
+			}
+		and:
+			notThrown()
+	}
+
+	def 'Write the stream itself is not fatal for request processing (flush correct)'() {
+		given:
+			def responderMock = Mock(TemplatedHttpResponder)
+			def HttpFileRequestConsumer consumer = new HttpFileWriteRequestConsumer(responderMock)
+			def File file = Mock()
+			def OutputStream outputStream = Mock()
+			def HttpEntity entity = Mock()
+
+		when:
+			consumer.writeAndFlush(file, entity, outputStream)
+
+		then:
+			1 * entity.writeTo(outputStream) >> {
+				throw new IOException();
+			}
+		and:
+			1 * outputStream.flush()
+		and:
 			1 * outputStream.close() >> {
 				throw new IOException();
 			}

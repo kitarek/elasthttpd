@@ -135,7 +135,7 @@ public class HttpFileWriteRequestConsumer implements HttpFileRequestConsumer {
 
 	void writeAndFlush(File file, HttpEntity entity, OutputStream outputStream) {
 		try {
-			writeAndFlush(entity, outputStream);
+			writeAndFlushUnchecked(entity, outputStream);
 		} catch (IOException e) {
 			LOGGER.error(format("There was an error with writing or flushing stream to file: %s",
 					file.getAbsolutePath()), e);
@@ -145,7 +145,7 @@ public class HttpFileWriteRequestConsumer implements HttpFileRequestConsumer {
 		}
 	}
 
-	private void writeAndFlush(HttpEntity entity, OutputStream outputStream) throws IOException {
+	private void writeAndFlushUnchecked(HttpEntity entity, OutputStream outputStream) throws IOException {
 		entity.writeTo(outputStream);
 		outputStream.flush();
 	}
