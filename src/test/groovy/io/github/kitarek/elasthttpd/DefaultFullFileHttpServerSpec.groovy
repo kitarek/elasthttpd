@@ -59,6 +59,8 @@ class DefaultFullFileHttpServerSpec extends Specification {
 		and:
 			1 * fileServerPluginBuilderMock.allowFileOperations(FileServerMode.READ_AND_WRITE) >> fileServerPluginBuilderMock
 			1 * fileServerPluginBuilderMock.withRootServerDirectory("./sandbox") >> fileServerPluginBuilderMock
+			1 * fileServerPluginBuilderMock.serveSubresourceWhenDirectoryRequested("index.html") >>
+					fileServerPluginBuilderMock
 	}
 }
 

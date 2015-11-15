@@ -36,7 +36,10 @@ public class DefaultFullFileHttpServer {
 		ElastHttpD
 			.startBuilding()
 			.consumeRequestsWithPlugin(
-					fileServer().withRootServerDirectory(rootDirectory).allowFileOperations(READ_AND_WRITE)
+					fileServer()
+							.withRootServerDirectory(rootDirectory)
+							.allowFileOperations(READ_AND_WRITE)
+							.serveSubresourceWhenDirectoryRequested("index.html")
 			)
 			.run();
 	}

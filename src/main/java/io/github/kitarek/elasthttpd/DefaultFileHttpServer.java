@@ -34,7 +34,9 @@ public class DefaultFileHttpServer {
 		ElastHttpD
 				.startBuilding()
 				.consumeRequestsWithPlugin(
-						fileServer().withRootServerDirectory(currentDirectory())
+						fileServer()
+								.withRootServerDirectory(currentDirectory())
+								.serveSubresourceWhenDirectoryRequested("demo.html")
 				)
 				.run();
 	}

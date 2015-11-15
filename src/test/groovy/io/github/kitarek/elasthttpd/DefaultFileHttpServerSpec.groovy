@@ -57,6 +57,8 @@ class DefaultFileHttpServerSpec extends Specification {
 			0 * builder._
 		and:
 			1 * fileServerPluginBuilderMock.withRootServerDirectory(".") >> fileServerPluginBuilderMock
+			1 * fileServerPluginBuilderMock.serveSubresourceWhenDirectoryRequested("demo.html") >>
+				fileServerPluginBuilderMock
 	}
 }
 
