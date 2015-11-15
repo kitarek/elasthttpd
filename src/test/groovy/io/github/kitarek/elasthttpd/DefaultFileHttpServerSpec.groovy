@@ -27,7 +27,7 @@ import spock.lang.Specification
 
 import static org.powermock.api.easymock.PowerMock.mockStatic
 
-@PrepareForTest([ElastHttpD.class])
+@PrepareForTest([ElastHttpD.class, FileServerPluginBuilder.class])
 class DefaultFileHttpServerSpec extends Specification {
 
 	@Rule PowerMockRule powerMockRule = new PowerMockRule();
@@ -35,11 +35,15 @@ class DefaultFileHttpServerSpec extends Specification {
 	def 'The default file HTTP server can be run passing fileserver plugin builder'() {
 		given:
 			mockStatic(ElastHttpD.class)
+			mockStatic(FileServerPluginBuilder.class)
 		and:
 			def args = [] as String[];
-			def builder = Mock(ElastHttpDBuilder)
+			def ElastHttpDBuilder builder = Mock()
+			def FileServerPluginBuilder fileServerPluginBuilderMock = Mock()
 		and:
 			EasyMock.expect(ElastHttpD.startBuilding()).andReturn(builder).once();
+			EasyMock.expect(FileServerPluginBuilder.fileServer()).andReturn(fileServerPluginBuilderMock).once();
+			EasyMock.expect(FileServerPluginBuilder.currentDirectory()).andReturn(".").atLeastOnce();
 			PowerMock.replayAll()
 
 		when:
@@ -48,9 +52,11 @@ class DefaultFileHttpServerSpec extends Specification {
 		then:
 			PowerMock.verifyAll()
 		and:
-			1 * builder.consumeRequestsWithPlugin({it != null && it instanceof FileServerPluginBuilder}) >> builder
+			1 * builder.consumeRequestsWithPlugin(fileServerPluginBuilderMock) >> builder
 			1 * builder.run()
 			0 * builder._
+		and:
+			1 * fileServerPluginBuilderMock.withRootServerDirectory(".") >> fileServerPluginBuilderMock
 	}
 }
 
