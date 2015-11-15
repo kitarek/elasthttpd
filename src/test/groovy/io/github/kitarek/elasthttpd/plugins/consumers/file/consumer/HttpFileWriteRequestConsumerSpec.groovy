@@ -16,19 +16,22 @@
  */
 
 package io.github.kitarek.elasthttpd.plugins.consumers.file.consumer
-
 import io.github.kitarek.elasthttpd.commons.TemplatedHttpResponder
 import io.github.kitarek.elasthttpd.plugins.consumers.file.mapper.UriToFileMapper
 import io.github.kitarek.elasthttpd.plugins.consumers.file.request.HttpFileRequest
+import org.apache.http.HttpEntityEnclosingRequest
 import org.apache.http.HttpRequest
 import org.apache.http.HttpResponse
 import org.apache.http.RequestLine
+import org.apache.http.entity.StringEntity
 import spock.lang.Shared
 import spock.lang.Specification
 
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 
+import static java.nio.charset.StandardCharsets.UTF_8
 import static java.util.UUID.randomUUID
 
 class HttpFileWriteRequestConsumerSpec extends Specification {
@@ -120,9 +123,10 @@ class HttpFileWriteRequestConsumerSpec extends Specification {
 		then:
 			1 * mapper.mapUriRequestPath(requestedUri) >> existingPathToFile
 			1 * responderMock.respondThatResourceIsCreated(response)
-			// TODO the rest to be checked with entity later
+			// TODO the rest to be checked with response entity later
 		and:
 			new File(existingPathToFile).exists()
+			new File(existingPathToFile).size() == 0
 
 		cleanup:
 			new File(existingPathToFile).delete()
@@ -218,6 +222,56 @@ class HttpFileWriteRequestConsumerSpec extends Specification {
 		and:
 			notThrown()
 	}
+
+	def 'Always creates a file based on entity content and respond with "CREATED" status template to write request *with entity* for requested URI that is existing path but not to an existing directory'() {
+		given:
+			def responderMock = Mock(TemplatedHttpResponder)
+			def HttpFileRequestConsumer consumer = new HttpFileWriteRequestConsumer(responderMock)
+			def HttpFileRequest fileRequest = Stub()
+		and:
+			def HttpEntityEnclosingRequest request = Mock()
+			def HttpResponse response = Mock()
+			def UriToFileMapper mapper = Mock()
+		and:
+			fileRequest.request() >> request
+			fileRequest.response() >> response
+			fileRequest.mapper() >> mapper
+		and:
+			def requestedUri = DIR_WITH_TEST_RESOURCES + randomUUID()
+			def RequestLine requestLine = Mock()
+			requestLine.uri >> requestedUri
+		and:
+			request.getRequestLine() >> requestLine
+			def stringToTransfer = "ółłąśćęććśół"
+			request.getEntity() >> new StringEntity(stringToTransfer, "text/plain", "UTF-8")
+		and:
+			def existingPathToFile = currentExistingProjectDirectory() + DIR_WITH_TEST_RESOURCES + randomUUID()
+
+		when:
+			consumer.consumeFileRequest(fileRequest)
+
+		then:
+			1 * mapper.mapUriRequestPath(requestedUri) >> existingPathToFile
+			1 * responderMock.respondThatResourceIsCreated(response)
+			// TODO the rest to be checked with response entity later
+
+		when:
+			File file = new File(existingPathToFile)
+
+		then:
+			file.exists()
+			file.size() == stringToTransfer.bytes.size()
+
+		when:
+			def actualContentOfFile = new String(Files.readAllBytes(Paths.get(existingPathToFile)), UTF_8);
+
+		then:
+			actualContentOfFile == stringToTransfer
+
+		cleanup:
+			new File(existingPathToFile).delete()
+	}
+
 
 	@Shared
 	private currentExistingProjectDirectory = {

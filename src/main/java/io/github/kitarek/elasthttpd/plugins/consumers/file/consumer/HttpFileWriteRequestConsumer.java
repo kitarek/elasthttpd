@@ -19,12 +19,17 @@ package io.github.kitarek.elasthttpd.plugins.consumers.file.consumer;
 
 import io.github.kitarek.elasthttpd.commons.TemplatedHttpResponder;
 import io.github.kitarek.elasthttpd.plugins.consumers.file.request.HttpFileRequest;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang3.Validate.notNull;
@@ -45,14 +50,14 @@ public class HttpFileWriteRequestConsumer implements HttpFileRequestConsumer {
 		doWithRequestedFile(fileRequest, new File(absoluteLocalPathToResource));
 	}
 
-	private void doWithRequestedFile(HttpFileRequest fileRequest, File file) {
+	protected void doWithRequestedFile(HttpFileRequest fileRequest, File file) {
 		if (file.isDirectory())
 			respondThatResourceIsForbidden(fileRequest);
 		else
 			tryToWriteFileAndRespondToRequest(fileRequest, file);
 	}
 
-	private void respondThatResourceIsForbidden(HttpFileRequest fileRequest) {
+	protected void respondThatResourceIsForbidden(HttpFileRequest fileRequest) {
 		templatedHttpResponder.respondWithResourceForbidden(fileRequest.response(),
 				format("The following resource is directory and cannot be overwritten as file: %s",
 						getRequestedUri(fileRequest)));
@@ -74,7 +79,7 @@ public class HttpFileWriteRequestConsumer implements HttpFileRequestConsumer {
 		}
 	}
 
-	private void handleFileNotFoundException(HttpFileRequest fileRequest, File file, FileNotFoundException e) {
+	protected void handleFileNotFoundException(HttpFileRequest fileRequest, File file, FileNotFoundException e) {
 		templatedHttpResponder.respondWithResourceNotFound(fileRequest.response(),
 				format("Cannot find the resource or resources in requested path: %s", getRequestedUri(fileRequest)));
 		LOGGER.error(format("Cannot find the requested local file '%s' identified by resource: '%s'", file.getAbsolutePath(),
@@ -107,21 +112,58 @@ public class HttpFileWriteRequestConsumer implements HttpFileRequestConsumer {
 				format("There was an unexpected failure when creating the resource: %s", getRequestedUri(fileRequest)));
 	}
 
+	private void decodeRequestEntityAndWriteToFile(HttpFileRequest fileRequest, File file,
+												   HttpEntityEnclosingRequest httpEntityEnclosingRequest) {
+		final HttpEntity entity = httpEntityEnclosingRequest.getEntity();
+		try {
+			decodeRequestEntityAndWriteToFileUnchecked(fileRequest, file, entity);
+		} catch (FileNotFoundException e) {
+			handleFileNotFoundException(fileRequest, file, e);
+		}
+	}
+
+	private void decodeRequestEntityAndWriteToFileUnchecked(HttpFileRequest fileRequest, File file, HttpEntity entity) throws FileNotFoundException {
+		OutputStream outputStream = new FileOutputStream(file);
+		writeAndFlush(file, entity, outputStream);
+		respondThatResourceIsCreated(fileRequest);
+	}
+
 	private void respondThatResourceIsCreated(HttpFileRequest fileRequest) {
 		templatedHttpResponder.respondThatResourceIsCreated(fileRequest.response());
 		// TODO ... create an URL
 	}
 
-	private void decodeRequestEntityAndWriteToFile(HttpFileRequest fileRequest, File file,
-												   HttpEntityEnclosingRequest httpEntityEnclosingRequest) {
-
+	void writeAndFlush(File file, HttpEntity entity, OutputStream outputStream) {
+		try {
+			writeAndFlush(entity, outputStream);
+		} catch (IOException e) {
+			LOGGER.error(format("There was an error with writing or flushing stream to file: %s",
+					file.getAbsolutePath()), e);
+			flushTheFile(file, outputStream, e);
+		} finally {
+			closeTheStream(outputStream, file);
+		}
 	}
 
-	private boolean isRequestImplementingEntity(HttpRequest request) {
+	private void writeAndFlush(HttpEntity entity, OutputStream outputStream) throws IOException {
+		entity.writeTo(outputStream);
+		outputStream.flush();
+	}
+
+	void flushTheFile(File file, OutputStream outputStream, IOException e) {
+		try {
+			outputStream.flush();
+		} catch (IOException e1) {
+			LOGGER.error(format("There was an error with flushing stream to file: %s",
+					file.getAbsolutePath()), e);
+		}
+	}
+
+	protected boolean isRequestImplementingEntity(HttpRequest request) {
 		return (request instanceof HttpEntityEnclosingRequest);
 	}
 
-	private HttpEntityEnclosingRequest upgradeHttpRequestToSupportEntities(HttpRequest request) {
+	protected HttpEntityEnclosingRequest upgradeHttpRequestToSupportEntities(HttpRequest request) {
 		return (HttpEntityEnclosingRequest) request;
 	}
 
@@ -129,7 +171,7 @@ public class HttpFileWriteRequestConsumer implements HttpFileRequestConsumer {
 		return fileRequest.mapper().mapUriRequestPath(uri);
 	}
 
-	private String getRequestedUri(HttpFileRequest fileRequest) {
+	protected String getRequestedUri(HttpFileRequest fileRequest) {
 		return fileRequest.request().getRequestLine().getUri();
 	}
 
