@@ -167,29 +167,36 @@ class UriToFileMapperSpec extends Specification {
 			actualAbsoluteFilePath == expectedMappedFilePath
 
 		where:
-			requestedPath | root                     | expectedMappedFilePath
-			'/src'        | validExistingDirectory() | validExistingDirectory() + "/src"
-			'/src/a/b/c'  | validExistingDirectory() | validExistingDirectory() + "/src/a/b/c"
+			requestedPath    | root                     | expectedMappedFilePath
+			'/src'           | validExistingDirectory() | validExistingDirectory() + "/src"
+			'/src/a/b/c%20'  | validExistingDirectory() | validExistingDirectory() + "/src/a/b/c "
+			'/src/a/b/c%20'  | validExistingDirectory() | validExistingDirectory() + "/src/a/b/c "
+			'/src%21'        | validExistingDirectory() | validExistingDirectory() + "/src!"
+			'/src%2B'        | validExistingDirectory() | validExistingDirectory() + "/src+"
+
 	}
 
 	@Unroll("Maps specified relative URI request path: #requestedPath appropriatly always under rootDirectory")
 	def 'Maps specified relative URI request path appropriatly always under rootDirectory'() {
 		given:
-		def UriToFileMapper mapper = new UriToFileMapper(root)
+			def UriToFileMapper mapper = new UriToFileMapper(root)
 
 		when:
-		def actualAbsoluteFilePath = mapper.mapUriRequestPath(requestedPath)
+			def actualAbsoluteFilePath = mapper.mapUriRequestPath(requestedPath)
 
 		then:
-		actualAbsoluteFilePath == expectedMappedFilePath
+			actualAbsoluteFilePath == expectedMappedFilePath
 
 		where:
-		requestedPath          | root                     | expectedMappedFilePath
-		'/../src'              | validExistingDirectory() | validExistingDirectory() + "/src"
-		'/../../../src/a/b/c'  | validExistingDirectory() | validExistingDirectory() + "/src/a/b/c"
-		'/../../../src/a/b/c'  | validExistingDirectory() | validExistingDirectory() + "/src/a/b/c"
-		'/./../../src/a/b/c'   | validExistingDirectory() | validExistingDirectory() + "/src/a/b/c"
-		'/../src/../a/../b/c'  | validExistingDirectory() | validExistingDirectory() + "/b/c"
+			requestedPath              | root                     | expectedMappedFilePath
+			'/../src'                  | validExistingDirectory() | validExistingDirectory() + "/src"
+			'/../../../src/a/b/c'      | validExistingDirectory() | validExistingDirectory() + "/src/a/b/c"
+			'/../../../src/a/b/c'      | validExistingDirectory() | validExistingDirectory() + "/src/a/b/c"
+			'/./../../src/a/b/c'       | validExistingDirectory() | validExistingDirectory() + "/src/a/b/c"
+			'/../src/../a/../b/c'      | validExistingDirectory() | validExistingDirectory() + "/b/c"
+			'/../src/../a/../b/c%2FD'  | validExistingDirectory() | validExistingDirectory() + "/b/c/D"
+			'/../src/../a/../b/c%2F'   | validExistingDirectory() | validExistingDirectory() + "/b/c"
+			'/../src/../a/../b/c%2C'   | validExistingDirectory() | validExistingDirectory() + "/b/c,"
 	}
 
 	@Shared

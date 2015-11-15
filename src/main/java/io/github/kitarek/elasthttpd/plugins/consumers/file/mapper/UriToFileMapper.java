@@ -17,7 +17,13 @@
 
 package io.github.kitarek.elasthttpd.plugins.consumers.file.mapper;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -27,6 +33,7 @@ import static org.apache.commons.lang3.Validate.*;
 
 public class UriToFileMapper {
 
+	public static final Logger LOGGER = LoggerFactory.getLogger(UriToFileMapper.class);
 	public static final String ROOT_URI_REQUEST_PATH = "/";
 	public static final String RESOURCE_PATH_SEPARATOR = "/";
 	private final String pathToMappedRootDirectory;
@@ -61,7 +68,14 @@ public class UriToFileMapper {
 	}
 
 	private String normalizeUrlRequestPath(String uriRequestPath) {
-		Path p = Paths.get(uriRequestPath);
+		String localRequestPath;
+		try {
+			localRequestPath = URLDecoder.decode(uriRequestPath, Charset.defaultCharset().displayName());
+		} catch (UnsupportedEncodingException e) {
+			LOGGER.error("Cannot decode URI. Using original URI path for file", e);
+			localRequestPath = uriRequestPath;
+		}
+		final Path p = Paths.get(localRequestPath);
 		return p.normalize().toAbsolutePath().toString();
 	}
 
