@@ -198,4 +198,29 @@ class TemplatedHttpResponderSpec extends Specification {
 			1 * response.setStatusCode(HttpStatus.SC_NO_CONTENT)
 			1 * response.setReasonPhrase("DELETED")
 	}
+
+	def 'Cannot set code and reason if "CREATED" template is used with null response'() {
+		given:
+			def TemplatedHttpResponder responder = new TemplatedHttpResponder()
+
+		when:
+			responder.respondThatResourceIsCreated(null)
+
+		then:
+			thrown(NullPointerException)
+	}
+
+	def 'Set correct status code and reason if "CREATED" template is used'() {
+		given:
+			def TemplatedHttpResponder responder = new TemplatedHttpResponder()
+			def HttpResponse response = Mock()
+
+		when:
+			responder.respondThatResourceIsCreated(response)
+
+		then:
+			1 * response.setStatusCode(HttpStatus.SC_CREATED)
+			1 * response.setReasonPhrase("CREATED")
+	}
+
 }

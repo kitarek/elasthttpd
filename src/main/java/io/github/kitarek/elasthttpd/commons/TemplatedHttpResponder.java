@@ -65,4 +65,8 @@ public class TemplatedHttpResponder {
 	}
 
 
+	public void respondThatResourceIsCreated(HttpResponse response) {
+		response.setStatusCode(SC_CREATED);
+		response.setReasonPhrase("CREATED");
+	}
 }
