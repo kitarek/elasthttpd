@@ -17,6 +17,7 @@
 
 package io.github.kitarek.elasthttpd.plugins.consumers.file.consumer
 import io.github.kitarek.elasthttpd.commons.TemplatedHttpResponder
+import io.github.kitarek.elasthttpd.plugins.consumers.file.consumer.directory.HttpDirectoryRequestConsumer
 import io.github.kitarek.elasthttpd.plugins.consumers.file.mapper.UriToFileMapper
 import io.github.kitarek.elasthttpd.plugins.consumers.file.producer.HttpFileProducer
 import io.github.kitarek.elasthttpd.plugins.consumers.file.request.HttpFileRequest
@@ -43,23 +44,28 @@ class HttpFileReadRequestConsumerSpec extends Specification {
 	}
 
 	@Unroll
-	def 'Can never create instance when giving null HttpFileProducer'() {
+	def 'Can never create instance when giving null HttpFileProducer/TemplatedHttpResponder/HttpDirectoryRequestConsumer'() {
 		when:
-			new HttpFileReadRequestConsumer(producer, responder)
+			new HttpFileReadRequestConsumer(producer, responder, directoryRequestConsumer)
 
 		then:
 			thrown(NullPointerException)
 
 		where:
-			producer               | responder
-			null                   | Mock(TemplatedHttpResponder)
-			Mock(HttpFileProducer) | null
-			null                   | null
+			producer               | responder                     | directoryRequestConsumer
+			null                   | Mock(TemplatedHttpResponder)  | null
+			Mock(HttpFileProducer) | null                          | null
+			null                   | null                          | null
+			null                   | Mock(TemplatedHttpResponder)  | Mock(HttpDirectoryRequestConsumer)
+			Mock(HttpFileProducer) | null                          | Mock(HttpDirectoryRequestConsumer)
+			null                   | null                          | Mock(HttpDirectoryRequestConsumer)
+			null                   | null                          | null
 	}
 
 	def 'Can always create instance when giving not-null valid HttpFileProducer object'() {
 		when:
-			new HttpFileReadRequestConsumer(Mock(HttpFileProducer), Mock(TemplatedHttpResponder))
+			new HttpFileReadRequestConsumer(Mock(HttpFileProducer), Mock(TemplatedHttpResponder),
+					Mock(HttpDirectoryRequestConsumer))
 
 		then:
 			notThrown()
@@ -68,8 +74,9 @@ class HttpFileReadRequestConsumerSpec extends Specification {
 	def 'Always respond with 404 code to read request for file that does not exist'() {
 		given:
 			def TemplatedHttpResponder templatedHttpResponder = Mock()
+			def HttpDirectoryRequestConsumer directoryRequestConsumer = Mock()
 			def HttpFileRequestConsumer consumer = new HttpFileReadRequestConsumer(Mock(HttpFileProducer),
-					templatedHttpResponder)
+					templatedHttpResponder, Mock(HttpDirectoryRequestConsumer))
 			def HttpFileRequest fileRequest = Stub()
 		and:
 			def HttpRequest request = Mock()
@@ -94,13 +101,16 @@ class HttpFileReadRequestConsumerSpec extends Specification {
 		then:
 			1 * mapper.mapUriRequestPath(requestedUri) >> notExistingPathToFile
 			1 * templatedHttpResponder.respondWithResourceNotFound(response, _)
+			0 * directoryRequestConsumer._
 	}
 
-	def 'Always respond with 403 code to read request for requested URI that are directories'() {
+	def 'Always use HttpDirectoryRequestConsumer to consume request for requested URI that are directories'() {
 		given:
 			def TemplatedHttpResponder templatedHttpResponder = Mock()
+			def HttpDirectoryRequestConsumer directoryRequestConsumer = Mock()
 			def HttpFileRequestConsumer consumer = new HttpFileReadRequestConsumer(Mock(HttpFileProducer),
-					templatedHttpResponder)
+					templatedHttpResponder, directoryRequestConsumer)
+
 			def HttpFileRequest fileRequest = Stub()
 		and:
 			def HttpRequest request = Mock()
@@ -118,20 +128,29 @@ class HttpFileReadRequestConsumerSpec extends Specification {
 			request.getRequestLine() >> requestLine
 		and:
 			def existingPathToDirectory = currentExistingProjectDirectory()
+		and:
+			def File capturedFile
 
 		when:
 			consumer.consumeFileRequest(fileRequest)
 
 		then:
 			1 * mapper.mapUriRequestPath(requestedUri) >> existingPathToDirectory
-			1 * templatedHttpResponder.respondWithResourceForbidden(response, _)
+			1 * directoryRequestConsumer.serveExistingDirectoryElement(fileRequest, _) >> { args ->
+				capturedFile = args[1]
+			}
+		and:
+			capturedFile != null
+			capturedFile.getAbsolutePath() == existingPathToDirectory
 	}
 
 	def 'Always use HttpFileProducer to generate response when there is a read request for file that exists'() {
 		given:
 			def HttpFileProducer producer = Mock()
 			def TemplatedHttpResponder templatedHttpResponder = Mock()
-			def HttpFileRequestConsumer consumer = new HttpFileReadRequestConsumer(producer, templatedHttpResponder)
+			def HttpDirectoryRequestConsumer directoryRequestConsumer = Mock()
+			def HttpFileRequestConsumer consumer = new HttpFileReadRequestConsumer(producer, templatedHttpResponder,
+				directoryRequestConsumer)
 			def HttpFileRequest fileRequest = Stub()
 		and:
 			def HttpRequest request = Mock()
