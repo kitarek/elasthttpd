@@ -17,21 +17,23 @@
 
 package io.github.kitarek.elasthttpd.plugins.consumers.file.consumer;
 
+import io.github.kitarek.elasthttpd.commons.TemplatedHttpResponder;
 import io.github.kitarek.elasthttpd.plugins.consumers.file.producer.HttpFileProducer;
 import io.github.kitarek.elasthttpd.plugins.consumers.file.request.HttpFileRequest;
 
 import java.io.File;
 
+import static java.lang.String.format;
 import static org.apache.commons.lang3.Validate.notNull;
-import static org.apache.http.HttpStatus.SC_FORBIDDEN;
-import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 
 class HttpFileReadRequestConsumer implements HttpFileRequestConsumer {
 
 	private final HttpFileProducer httpFileProducer;
+	private final TemplatedHttpResponder templatedHttpResponder;
 
-	public HttpFileReadRequestConsumer(HttpFileProducer httpFileProducer) {
+	public HttpFileReadRequestConsumer(HttpFileProducer httpFileProducer, TemplatedHttpResponder templatedHttpResponder) {
 		this.httpFileProducer = notNull(httpFileProducer, "HttpFileProducer constructor argument needs to be not null");
+		this.templatedHttpResponder = notNull(templatedHttpResponder, "TemplatedHttpResponder constructor argument needs to be not null");
 	}
 
 	public void consumeFileRequest(HttpFileRequest fileRequest) {
@@ -55,13 +57,14 @@ class HttpFileReadRequestConsumer implements HttpFileRequestConsumer {
 	}
 
 	private void respondThatFileHasNotBeenFound(HttpFileRequest fileRequest) {
-		fileRequest.response().setStatusCode(SC_NOT_FOUND);
-		fileRequest.response().setReasonPhrase("NOT FOUND");
+		templatedHttpResponder.respondWithResourceNotFound(fileRequest.response(),
+				format("404: The requested resource was not found: %s", getRequestedUri(fileRequest)));
 	}
 
 	private void respondThatFileHasBeenForbiddenToSend(HttpFileRequest fileRequest) {
-		fileRequest.response().setStatusCode(SC_FORBIDDEN);
-		fileRequest.response().setReasonPhrase("FORBIDDEN");
+		templatedHttpResponder.respondWithResourceForbidden(fileRequest.response(),
+				format("403: The requested resource is forbidden (i.e. directory) and cannot be fetched: %s",
+						getRequestedUri(fileRequest)));
 	}
 
 	public String mapUriToLocalPath(HttpFileRequest fileRequest, String uri) {

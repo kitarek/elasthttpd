@@ -32,7 +32,7 @@ public class HttpFileRequestConsumerFactory {
 	public HttpFileRequestConsumer createConsumerForReadOperation() {
 		MimeTypeDetector mimeTypeDetector = new MimeTypeDetector();
 		HttpFileProducer httpFileProducer = new HttpFileProducer(mimeTypeDetector, templatedHttpResponder);
-		return new HttpFileReadRequestConsumer(httpFileProducer);
+		return new HttpFileReadRequestConsumer(httpFileProducer, templatedHttpResponder);
 	}
 
 	public HttpFileRequestConsumer createConsumerForWriteOperation() {

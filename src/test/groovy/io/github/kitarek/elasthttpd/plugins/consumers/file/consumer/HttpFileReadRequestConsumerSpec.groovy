@@ -16,21 +16,21 @@
  */
 
 package io.github.kitarek.elasthttpd.plugins.consumers.file.consumer
+import io.github.kitarek.elasthttpd.commons.TemplatedHttpResponder
 import io.github.kitarek.elasthttpd.plugins.consumers.file.mapper.UriToFileMapper
 import io.github.kitarek.elasthttpd.plugins.consumers.file.producer.HttpFileProducer
 import io.github.kitarek.elasthttpd.plugins.consumers.file.request.HttpFileRequest
 import org.apache.http.HttpRequest
 import org.apache.http.HttpResponse
-import org.apache.http.HttpStatus
 import org.apache.http.RequestLine
 import spock.lang.Shared
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import java.nio.file.Path
 import java.nio.file.Paths
 
 import static java.util.UUID.randomUUID
-import static org.apache.http.HttpStatus.SC_NOT_FOUND
 
 class HttpFileReadRequestConsumerSpec extends Specification {
 
@@ -42,17 +42,24 @@ class HttpFileReadRequestConsumerSpec extends Specification {
 			thrown(Exception)
 	}
 
+	@Unroll
 	def 'Can never create instance when giving null HttpFileProducer'() {
 		when:
-			new HttpFileReadRequestConsumer(null)
+			new HttpFileReadRequestConsumer(producer, responder)
 
 		then:
 			thrown(NullPointerException)
+
+		where:
+			producer               | responder
+			null                   | Mock(TemplatedHttpResponder)
+			Mock(HttpFileProducer) | null
+			null                   | null
 	}
 
 	def 'Can always create instance when giving not-null valid HttpFileProducer object'() {
 		when:
-			new HttpFileReadRequestConsumer(Mock(HttpFileProducer))
+			new HttpFileReadRequestConsumer(Mock(HttpFileProducer), Mock(TemplatedHttpResponder))
 
 		then:
 			notThrown()
@@ -60,7 +67,9 @@ class HttpFileReadRequestConsumerSpec extends Specification {
 
 	def 'Always respond with 404 code to read request for file that does not exist'() {
 		given:
-			def HttpFileRequestConsumer consumer = new HttpFileReadRequestConsumer(Mock(HttpFileProducer))
+			def TemplatedHttpResponder templatedHttpResponder = Mock()
+			def HttpFileRequestConsumer consumer = new HttpFileReadRequestConsumer(Mock(HttpFileProducer),
+					templatedHttpResponder)
 			def HttpFileRequest fileRequest = Stub()
 		and:
 			def HttpRequest request = Mock()
@@ -84,13 +93,14 @@ class HttpFileReadRequestConsumerSpec extends Specification {
 
 		then:
 			1 * mapper.mapUriRequestPath(requestedUri) >> notExistingPathToFile
-			1 * response.setStatusCode(SC_NOT_FOUND)
-			1 * response.setReasonPhrase("NOT FOUND")
+			1 * templatedHttpResponder.respondWithResourceNotFound(response, _)
 	}
 
 	def 'Always respond with 403 code to read request for requested URI that are directories'() {
 		given:
-			def HttpFileRequestConsumer consumer = new HttpFileReadRequestConsumer(Mock(HttpFileProducer))
+			def TemplatedHttpResponder templatedHttpResponder = Mock()
+			def HttpFileRequestConsumer consumer = new HttpFileReadRequestConsumer(Mock(HttpFileProducer),
+					templatedHttpResponder)
 			def HttpFileRequest fileRequest = Stub()
 		and:
 			def HttpRequest request = Mock()
@@ -114,14 +124,14 @@ class HttpFileReadRequestConsumerSpec extends Specification {
 
 		then:
 			1 * mapper.mapUriRequestPath(requestedUri) >> existingPathToDirectory
-			1 * response.setStatusCode(HttpStatus.SC_FORBIDDEN)
-			1 * response.setReasonPhrase("FORBIDDEN")
+			1 * templatedHttpResponder.respondWithResourceForbidden(response, _)
 	}
 
 	def 'Always use HttpFileProducer to generate response when there is a read request for file that exists'() {
 		given:
-			def producer = Mock(HttpFileProducer)
-			def HttpFileRequestConsumer consumer = new HttpFileReadRequestConsumer(producer)
+			def HttpFileProducer producer = Mock()
+			def TemplatedHttpResponder templatedHttpResponder = Mock()
+			def HttpFileRequestConsumer consumer = new HttpFileReadRequestConsumer(producer, templatedHttpResponder)
 			def HttpFileRequest fileRequest = Stub()
 		and:
 			def HttpRequest request = Mock()
