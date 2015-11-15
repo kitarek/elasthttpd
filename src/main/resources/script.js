@@ -34,7 +34,7 @@ $(document).ready(function() {
                     $("#delete").data("url", targetRelativeUrl);
                     $("#filename").text(fileName);
                     $("#filename2").text(fileName);
-                    $("#deleteErrorMessage").text();
+                    $("#deleteErrorMessage").text("");
                 },
                 error: function () {
                     $("#successUploadBlock").hide();
