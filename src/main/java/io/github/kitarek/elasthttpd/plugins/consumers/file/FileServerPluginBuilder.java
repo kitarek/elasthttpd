@@ -17,8 +17,14 @@
 
 package io.github.kitarek.elasthttpd.plugins.consumers.file;
 
+import io.github.kitarek.elasthttpd.commons.MimeTypeDetector;
+import io.github.kitarek.elasthttpd.commons.TemplatedHttpResponder;
 import io.github.kitarek.elasthttpd.plugins.consumers.ConsumerPluginBuilder;
 import io.github.kitarek.elasthttpd.plugins.consumers.file.consumer.HttpFileRequestConsumerFactory;
+import io.github.kitarek.elasthttpd.plugins.consumers.file.consumer.directory.DirectorySubResourceRequestConsumer;
+import io.github.kitarek.elasthttpd.plugins.consumers.file.consumer.directory.ForbiddenDirectoryRequestConsumer;
+import io.github.kitarek.elasthttpd.plugins.consumers.file.consumer.directory.HttpDirectoryRequestConsumer;
+import io.github.kitarek.elasthttpd.plugins.consumers.file.producer.HttpFileProducer;
 import io.github.kitarek.elasthttpd.plugins.consumers.file.request.HttpFileRequestFactory;
 import io.github.kitarek.elasthttpd.plugins.consumers.file.selector.HttpFileRequestConsumerSelector;
 import io.github.kitarek.elasthttpd.server.consumers.HttpRequestConsumer;
@@ -34,6 +40,11 @@ public class FileServerPluginBuilder implements ConsumerPluginBuilder {
 
 	private FileServerMode fileServerMode = FileServerMode.READ_ONLY;
 	private File root;
+	private final TemplatedHttpResponder templatedHttpResponder = new TemplatedHttpResponder();
+	private MimeTypeDetector mimeTypeDetector = new MimeTypeDetector();
+	private final HttpFileProducer httpFileProducer = new HttpFileProducer(mimeTypeDetector, templatedHttpResponder);
+	private HttpDirectoryRequestConsumer httpDirectoryRequestConsumer = new ForbiddenDirectoryRequestConsumer(
+			templatedHttpResponder);
 
 	private FileServerPluginBuilder() {
 	}
@@ -60,10 +71,29 @@ public class FileServerPluginBuilder implements ConsumerPluginBuilder {
 		return this;
 	}
 
+	/**
+	 * Respond with error when serving directory-related resources
+	 */
+	public FileServerPluginBuilder forbidsAccessToDirectories() {
+		httpDirectoryRequestConsumer = new ForbiddenDirectoryRequestConsumer(templatedHttpResponder);
+		return this;
+	}
+
+	/**
+	 * Use predefined sub-resource of that directory for resource resolution
+	 */
+	public FileServerPluginBuilder serveSubresourceWhenDirectoryRequested(String subresource) {
+		notNull(subresource, "Subresource must be not null");
+		httpDirectoryRequestConsumer = new DirectorySubResourceRequestConsumer(httpFileProducer, templatedHttpResponder,
+				subresource);
+		return this;
+	}
+
 	public HttpRequestConsumer build() {
 		notNull(root, "You need to invoke mandatory builder chain method: 'withRootServerDirectory' to define root server folder");
 		HttpFileRequestFactory requestFactory = new HttpFileRequestFactory(root.getAbsolutePath());
-		HttpFileRequestConsumerFactory consumerFactory = new HttpFileRequestConsumerFactory();
+		HttpFileRequestConsumerFactory consumerFactory = new HttpFileRequestConsumerFactory(templatedHttpResponder,
+				httpDirectoryRequestConsumer, httpFileProducer);
 		HttpFileRequestConsumerSelector selector = new HttpFileRequestConsumerSelector(fileServerMode, consumerFactory);
 		return new HttpFileRequestConsumerDispatcher(requestFactory, selector);
 	}

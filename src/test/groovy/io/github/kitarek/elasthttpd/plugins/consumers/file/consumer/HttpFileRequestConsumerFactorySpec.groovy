@@ -17,20 +17,50 @@
 
 package io.github.kitarek.elasthttpd.plugins.consumers.file.consumer
 
+import io.github.kitarek.elasthttpd.commons.TemplatedHttpResponder
+import io.github.kitarek.elasthttpd.plugins.consumers.file.consumer.directory.HttpDirectoryRequestConsumer
+import io.github.kitarek.elasthttpd.plugins.consumers.file.producer.HttpFileProducer
 import spock.lang.Specification
 
 class HttpFileRequestConsumerFactorySpec extends Specification {
 
-	def 'Always can create instance without parameters'() {
+	def 'Never can create instance without parameters'() {
 		when:
 			new HttpFileRequestConsumerFactory()
+		then:
+			thrown(Exception)
+	}
+
+	def 'Never can create instance with null dependencies'() {
+		when:
+			new HttpFileRequestConsumerFactory(responder, consumer, producer)
+
+		then:
+			thrown(NullPointerException)
+
+		where:
+			responder                    | consumer                           | producer
+			null                         | Mock(HttpDirectoryRequestConsumer) | Mock(HttpFileProducer)
+			Mock(TemplatedHttpResponder) | null                               | Mock(HttpFileProducer)
+			Mock(TemplatedHttpResponder) | Mock(HttpDirectoryRequestConsumer) | null
+			Mock(TemplatedHttpResponder) | null                               | null
+			null                         | Mock(HttpDirectoryRequestConsumer) | null
+			null                         | null                               | Mock(HttpFileProducer)
+			null                         | null                               | null
+	}
+
+	def 'Always can create instance with not-null dependencies'() {
+		when:
+			new HttpFileRequestConsumerFactory(
+				Mock(TemplatedHttpResponder), Mock(HttpDirectoryRequestConsumer), Mock(HttpFileProducer))
 		then:
 			notThrown()
 	}
 
 	def 'Always can create read operation file request consumer'() {
 		given:
-			def HttpFileRequestConsumerFactory factory = new HttpFileRequestConsumerFactory()
+			def HttpFileRequestConsumerFactory factory = new HttpFileRequestConsumerFactory(
+					Mock(TemplatedHttpResponder), Mock(HttpDirectoryRequestConsumer), Mock(HttpFileProducer))
 
 		when:
 			def HttpFileRequestConsumer consumer = factory.createConsumerForReadOperation()
@@ -42,7 +72,8 @@ class HttpFileRequestConsumerFactorySpec extends Specification {
 
 	def 'Always can create write operation file request consumer'() {
 		given:
-			def HttpFileRequestConsumerFactory factory = new HttpFileRequestConsumerFactory()
+			def HttpFileRequestConsumerFactory factory = new HttpFileRequestConsumerFactory(
+					Mock(TemplatedHttpResponder), Mock(HttpDirectoryRequestConsumer), Mock(HttpFileProducer))
 
 		when:
 			def HttpFileRequestConsumer consumer = factory.createConsumerForWriteOperation()
@@ -54,7 +85,8 @@ class HttpFileRequestConsumerFactorySpec extends Specification {
 
 	def 'Always can create delete operation file request consumer'() {
 		given:
-			def HttpFileRequestConsumerFactory factory = new HttpFileRequestConsumerFactory()
+			def HttpFileRequestConsumerFactory factory = new HttpFileRequestConsumerFactory(
+					Mock(TemplatedHttpResponder), Mock(HttpDirectoryRequestConsumer), Mock(HttpFileProducer))
 
 		when:
 			def HttpFileRequestConsumer consumer = factory.createConsumerForDeleteOperation()

@@ -118,6 +118,38 @@ class FileServerPluginBuilderSpec extends Specification {
 			actualAbsoluteCurrentDirectory == validAbsoluteExistingDirectory()
 	}
 
+	def 'Always can provide build default consumer using currentDirectory for withRootServerDirectory and forbidsAccessToDirectories'() {
+		when:
+			def consumer = FileServerPluginBuilder.fileServer()
+					.withRootServerDirectory(currentDirectory())
+					.forbidsAccessToDirectories()
+					.build()
+
+		then:
+			consumer != null
+			consumer instanceof HttpFileRequestConsumerDispatcher
+	}
+
+	def 'Always can provide build default consumer using currentDirectory for withRootServerDirectory and serveSubresourceWhenDirectoryRequested'() {
+		when:
+		def consumer = FileServerPluginBuilder.fileServer()
+				.withRootServerDirectory(currentDirectory())
+				.serveSubresourceWhenDirectoryRequested("")
+				.build()
+
+		then:
+			consumer != null
+			consumer instanceof HttpFileRequestConsumerDispatcher
+	}
+
+	def 'Never cannot null subresource for serveSubresourceWhenDirectoryRequested'() {
+		when:
+			FileServerPluginBuilder.fileServer().serveSubresourceWhenDirectoryRequested(null)
+
+		then:
+			thrown(NullPointerException)
+	}
+
 	@Shared
 	private validExistingDirectory = {
 		Path currentRelativePath = Paths.get(".");

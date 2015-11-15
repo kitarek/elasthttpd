@@ -17,25 +17,27 @@
 
 package io.github.kitarek.elasthttpd.plugins.consumers.file.consumer;
 
-import io.github.kitarek.elasthttpd.commons.MimeTypeDetector;
 import io.github.kitarek.elasthttpd.commons.TemplatedHttpResponder;
-import io.github.kitarek.elasthttpd.plugins.consumers.file.consumer.directory.ForbiddenDirectoryRequestConsumer;
 import io.github.kitarek.elasthttpd.plugins.consumers.file.consumer.directory.HttpDirectoryRequestConsumer;
 import io.github.kitarek.elasthttpd.plugins.consumers.file.producer.HttpFileProducer;
+
+import static org.apache.commons.lang3.Validate.notNull;
 
 public class HttpFileRequestConsumerFactory {
 
 	private final TemplatedHttpResponder templatedHttpResponder;
 	private final HttpDirectoryRequestConsumer httpDirectoryRequestConsumer;
+	private final HttpFileProducer httpFileProducer;
 
-	public HttpFileRequestConsumerFactory() {
-		templatedHttpResponder = new TemplatedHttpResponder();
-		httpDirectoryRequestConsumer = new ForbiddenDirectoryRequestConsumer(templatedHttpResponder);
+	public HttpFileRequestConsumerFactory(TemplatedHttpResponder templatedHttpResponder,
+										  HttpDirectoryRequestConsumer httpDirectoryRequestConsumer,
+										  HttpFileProducer httpFileProducer) {
+		this.templatedHttpResponder = notNull(templatedHttpResponder);
+		this.httpDirectoryRequestConsumer = notNull(httpDirectoryRequestConsumer);
+		this.httpFileProducer = notNull(httpFileProducer);
 	}
 
 	public HttpFileRequestConsumer createConsumerForReadOperation() {
-		MimeTypeDetector mimeTypeDetector = new MimeTypeDetector();
-		HttpFileProducer httpFileProducer = new HttpFileProducer(mimeTypeDetector, templatedHttpResponder);
 		return new HttpFileReadRequestConsumer(httpFileProducer, templatedHttpResponder, httpDirectoryRequestConsumer);
 	}
 
