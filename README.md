@@ -59,10 +59,24 @@ To browse project files via server just run:
 
 and try to access:
 
-        http://localhost:18181/build/reports/jacoco/test/html/index.html
+or:     
+         http://localhost:18181
 
-You should see this project **unit test coverage report**. You should also
+You should be able to see this project **unit test coverage report**. You should also
 be able to click on different links.
+
+If you would like more interactive behavior there is a second demo...
+
+## The fully interactive demo for file server plugin
+
+There is a HTML/JS form that allows to PUT/GET/DELETE any file. Just invoke:
+
+         ./gradlew runFullFileServer
+         
+Please note the difference between `runFullFileServer` and `runFileServer`.
+Please use the above URL:
+
+         http://localhost:18181
 
 ## The idea behind...
 
@@ -157,3 +171,12 @@ swappable (serving files, microservices, proxies etc).
 
 Obviously the central point of this webserver is the ElastHttpD builder where
 you can compose and build/nest differnet plugins.
+
+## Things to be done...
+
+* MAJOR: FileServer plugin: write files to temporary upload server space instead to target location directly
+* MAJOR: FileServer plugin: implement directory listing as HttpDireectoryRequestConsumer
+* MINOR: core: write ElastHttpD setting to accept unknown methods into plugins (for purposes of WebDAV plugin)
+* MAJOR: core: cleaner shutdown of thread executors (using registering)
+* MINOR: commons: configurable response templates (i.e. HTML or XML/JSON)
+* MAJOR: FileServer plugin: extended POST request handling for multi-part form data
