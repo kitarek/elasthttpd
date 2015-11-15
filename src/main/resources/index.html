@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<!--
+  ~ Copyright 2015 Arek Kita
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  ~
+  -->
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FileServer Plugin Demo Page</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css" integrity="sha384-aUGj/X2zp5rLCbBxumKTCw2Z50WgIr1vs/PFN4praOTvYXWlVyh2UtNUU0KAUhAX" crossorigin="anonymous">
+</head>
+<body>
+    <noscript>This page requires browser scriting features</noscript>
+    <script src="http://code.jquery.com/jquery-latest.min.js" type="text/javascript"></script>
+    <script src="script.js"></script>
+    <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">FileServer Plugin REST Demo</a>
+            </div>
+            <div class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li class='navHome'><a href='#'>Home</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="container theme-showcase" role="main">
+        <div class="jumbotron">
+            <h1>FileServer Plugin Demo</h1>
+            <h2>Step 1: Upload file via webserver</h2>
+            <br/>
+            <form class="form-horizontal">
+                <div class="row">
+                    <div class="form-group">
+                        <div class="col-lg-2 col-lg-offset-1 text-right">
+                            <label for="fileId" class="control-label h5">File to upload:</label>
+                        </div>
+                        <div class="col-lg-6">
+                            <input type="file" id="fileId" class="form-control input-lg" placeholder="Browse for file"/>
+                        </div>
+                    </div>
+                </div>
+                <br/>
+                <div class="row">
+                    <div class="form-group">
+                        <div class="col-lg-3 col-lg-offset-3">
+                            <button id="upload" class="btn-lg btn-primary">PUT file on server</button>
+                        </div>
+                        <div class="col-lg-4">
+                            HTML5 unfortunately
+                            <a href="http://programmers.stackexchange.com/questions/114156/why-are-there-are-no-put-and-delete-methods-on-html-forms" target="_blank">does not allow</a>
+                            REST PUT method for simple form uploads,
+                            that's why JavaScript needs to act as simple HttpClient.
+                        </div>
+                    </div>
+                </div>
+                <br/>
+            </form>
+            <div id="successUploadBlock" style="display: none">
+                <h2>Step 2: Read file</h2>
+                <p>This is the <a id="targetLink" href="" target="_blank">link</a> you can use for viewing the following file: <span id="filename" class="info"></span></p>
+                <h2>Step 3: Delete file</h2>
+                <form class="form-horizontal">
+                    <div class="row">
+                        <div class="form-group">
+                            <div class="col-lg-3 text-right">
+                                <label for="fileId" class="control-label h5">Click to delete the uploaded file:</label>
+                            </div>
+                            <div class="col-lg-3">
+                                <button id="delete" type="submit" class="btn-lg btn-danger" data-url="">DELETE file from server</button>
+                            </div>
+                            <div id="deleteErrorMessage" class="col-lg-4 text-danger h5">
+
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div id="errorUploadBlock" style="display: none">
+                <h2>Error</h2>
+                There was an error uploading the above file. Try again!
+            </div>
+            <div id="deleteBlock" style="display: none">
+                <h2>Step 4: Check if file is deleted in real</h2>
+                <p>The following link to file: <a id="targetLink2" href="" target="_blank"><span id="filename2" class="info"></span></a> should respond with 404.</p>
+                <br/>
+                <p class="text-info">That's all. Thanks!</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
