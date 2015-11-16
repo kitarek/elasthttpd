@@ -47,6 +47,37 @@ on which the server listens by default.
 
 You should see dummy response from so called "dummy" request consumer.
 
+## How to see it more in action ? ...based on file server
+
+For file server functionality you need to use *built-in plugin* called **fileServer**.
+There is a default runner for Gradle that by default serves the project
+directory (it's the root webserver directory).
+
+To browse project files via server just run:
+
+        ./gradlew clean test jacocoTestReport runFileServer
+
+and try to access:
+
+or:     
+         http://localhost:18181
+
+You should be able to see this project **unit test coverage report**. You should also
+be able to click on different links.
+
+If you would like more interactive behavior there is a second demo...
+
+## The fully interactive demo for file server plugin
+
+There is a HTML/JS form that allows to PUT/GET/DELETE any file. Just invoke:
+
+         ./gradlew runFullFileServer
+         
+Please note the difference between `runFullFileServer` and `runFileServer`.
+Please use the above URL:
+
+         http://localhost:18181
+
 ## The idea behind...
 
 The goal of that server is to easily bootstrap fully-fledged HTTP server
@@ -60,6 +91,37 @@ Quick learning curve for starting HTTP server in the foreground and in the
 background can make life easier when external dependencies are needed. They can
 be just created on the spot by test itself on the same machine/the same JVM
 the test is invoked.
+
+## Pluggable behavior of server. Infinite possibilities...
+
+The server supports pluggable architecture of request consumers so you can
+do with them whatever you like - in example you can share directories and files 
+from server machine using built-in file server plugin functionality.
+
+Instead of using `customRequestConsumer` passing handler class you need
+to decalre correct plugin builder.
+
+See the real life example that works:
+
+        ElastHttpD
+            .startBuilding()
+            .consumeRequestsWithPlugin(
+                 fileServer().withRootServerDirectory(currentDirectory())
+            )
+            .runAsync()
+
+The `fileServer()` and `currentDirectory()` methods come from:
+
+ `io.github.kitarek.elasthttpd.plugins.consumers.file.FileServerPluginBuilder`
+
+...and this plugin it's built into server core functionality.
+
+You can write your own **extensions** and **plugins** (see **fileServer** plugin for
+reference how to write them) and compose or nest them in each other to
+achieve what you would like to see.
+
+Imagine virtual host plugin that can be used for each domain or path differently
+composing fileServer plugins in a different way.
 
 ## The idea under the hood... How to develop ?
 
@@ -95,17 +157,26 @@ In general the final solution is too let you quickly build significant number
 of scenarios for which some expectations will be defined and the report
 for such server session could be built.
 
+This can be now achieved writing dedicated plugin that will handle such
+expectation as a part of builder pattern.
+
 ## Why not just normal HttpServer ?
 
-The core is so flexible that there is a still possibility to add plugin engine
+The core is so flexible that there is a still possibility to add new plugins
 that for some URLs/methods and virtual hosts (like `Host`) could offer web
 file-related server by activating supplied plugin.
 
 The main purpose is to offer the base for HTTP server and the rest should be
 swappable (serving files, microservices, proxies etc).
 
-Obviously the central point of this webserver is the ElastHttpD builder which
-will be improved giving new options and not just only `customRequestConsumer`.
+Obviously the central point of this webserver is the ElastHttpD builder where
+you can compose and build/nest differnet plugins.
 
-All the other things possibly will be read from other annotated classes that
-could contain: scenarios, custom plugins, rules and expectations.
+## Things to be done...
+
+* MAJOR: FileServer plugin: write files to temporary upload server space instead to target location directly
+* MAJOR: FileServer plugin: implement directory listing as HttpDireectoryRequestConsumer
+* MINOR: core: write ElastHttpD setting to accept unknown methods into plugins (for purposes of WebDAV plugin)
+* MAJOR: core: cleaner shutdown of thread executors (using registering)
+* MINOR: commons: configurable response templates (i.e. HTML or XML/JSON)
+* MAJOR: FileServer plugin: extended POST request handling for multi-part form data

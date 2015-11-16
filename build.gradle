@@ -6,7 +6,11 @@ apply plugin: 'groovy'
 apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'application'
-
+apply plugin: 'checkstyle'
+apply plugin: 'codenarc'
+apply plugin: 'findbugs'
+apply plugin: 'jdepend'
+apply plugin: 'pmd'
 
 sourceCompatibility = 1.5
 
@@ -43,8 +47,59 @@ dependencies {
 	testCompile 'org.apache.httpcomponents:httpclient:4.5'
 	testCompile 'org.slf4j:jcl-over-slf4j:1.7.2'
 	testCompile 'org.slf4j:log4j-over-slf4j:1.7.2'
+	testCompile 'commons-codec:commons-codec:1.10'
 
 	testRuntime 'cglib:cglib-nodep:3.1'
 	testRuntime 'org.objenesis:objenesis:2.1'
 
+}
+
+checkstyleMain << {
+	ant.xslt(in: reports.xml.destination,
+			style: new File('config/checkstyle/checkstyle.xsl'),
+			out: new File(reports.xml.destination.parent, 'main.html'))
+}
+
+findbugsMain {
+	ignoreFailures = true
+}
+
+pmdMain << {
+	source 'src'
+	include '**/*.java'
+
+	reports {
+		xml.enabled = false
+		html.enabled = true
+	}
+
+	ruleSets = ["basic", "braces", "junit", "design" ]
+	ignoreFailures = true
+}
+
+tasks.withType(FindBugs) {
+	reports {
+		xml.enabled = false
+		html.enabled = true
+	}
+}
+
+
+task run (dependsOn: 'classes', type: JavaExec, overwrite: true) {
+	main = "io.github.kitarek.elasthttpd.DefaultHttpServer"
+	classpath = jar.outputs.files + project.configurations.runtime
+}
+
+task runFileServer (dependsOn: 'classes', type: JavaExec) {
+	main = "io.github.kitarek.elasthttpd.DefaultFileHttpServer"
+	classpath = jar.outputs.files + project.configurations.runtime
+}
+
+task runFullFileServer (dependsOn: 'classes', type: JavaExec) {
+	copy {
+		from './src/main/resources/'
+		into './sandbox'
+	}
+	main = "io.github.kitarek.elasthttpd.DefaultFullFileHttpServer"
+	classpath = jar.outputs.files + project.configurations.runtime
 }

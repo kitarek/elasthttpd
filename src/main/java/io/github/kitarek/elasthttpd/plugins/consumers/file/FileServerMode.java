@@ -15,24 +15,19 @@
  *
  */
 
-package io.github.kitarek.elasthttpd.model;
+package io.github.kitarek.elasthttpd.plugins.consumers.file;
 
 /**
- * Type of the HttpMethod
+ * Describes the basic capabilities of file server plugin instance
  */
-public enum HttpMethodType {
+public enum FileServerMode {
 	/**
-	 * General purpose method not requiring any special encoding or message body in request
+	 * Allows only to read/download files but the filesystem state cannot be changed.
 	 */
-	COMMON,
-
+	READ_ONLY,
 	/**
-	 * The method most likely points to use encoded body entity to send additional data
+	 * Allows to modify file and/or directories on HttpServer side as well as reading any resources exposed via
+	 * file server.
 	 */
-	ENTITY_ENCODING,
-
-	/**
-	 * Specialized method most likely not requiring any additional in request
-	 */
-	SPECIAL
+	READ_AND_WRITE
 }

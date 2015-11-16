@@ -17,6 +17,7 @@
 
 package io.github.kitarek.elasthttpd.builder
 import io.github.kitarek.elasthttpd.ElastHttpDBuilder
+import io.github.kitarek.elasthttpd.plugins.consumers.ConsumerPluginBuilder
 import io.github.kitarek.elasthttpd.server.consumers.HttpRequestConsumer
 import io.github.kitarek.elasthttpd.server.networking.NetworkConfigurationBuilder
 import spock.lang.Specification
@@ -144,5 +145,48 @@ class FluentElastHttpDBuilderSpec extends Specification {
 		where:
 			maxNumberOfConcurrentConnections << [1, 2, 100, 1024]
 	}
+
+	def 'Always can specify not-null plugin builder that will build HttpRequestConsumer instance'() {
+		given:
+			def ConsumerPluginBuilder consumerPluginBuilder = Mock()
+			def HttpRequestConsumer builtHttpRequestConsumer = Mock(HttpRequestConsumer)
+			def ElastHttpDBuilder builderUnderTest = new FluentElastHttpDBuilder()
+
+		when:
+			def builderInChain = builderUnderTest.consumeRequestsWithPlugin(consumerPluginBuilder)
+
+		then:
+			builderInChain != null
+			builderInChain == builderUnderTest
+			notThrown()
+		and:
+			1 * consumerPluginBuilder.build() >> builtHttpRequestConsumer
+	}
+
+	def 'Never can specify not-null plugin builder that will build null HttpRequestConsumer instance'() {
+		given:
+			def ConsumerPluginBuilder consumerPluginBuilder = Mock()
+			def ElastHttpDBuilder builderUnderTest = new FluentElastHttpDBuilder()
+
+		when:
+			builderUnderTest.consumeRequestsWithPlugin(consumerPluginBuilder)
+
+		then:
+			1 * consumerPluginBuilder.build() >> null
+		and:
+			thrown(NullPointerException)
+	}
+
+	def 'Never can specify null plugin builder'() {
+		given:
+			def ElastHttpDBuilder builderUnderTest = new FluentElastHttpDBuilder()
+
+		when:
+			builderUnderTest.consumeRequestsWithPlugin(null)
+
+		then:
+			thrown(NullPointerException)
+	}
+
 
 }

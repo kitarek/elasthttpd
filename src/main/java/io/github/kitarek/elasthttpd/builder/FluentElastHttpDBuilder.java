@@ -18,6 +18,7 @@
 package io.github.kitarek.elasthttpd.builder;
 
 import io.github.kitarek.elasthttpd.ElastHttpDBuilder;
+import io.github.kitarek.elasthttpd.plugins.consumers.ConsumerPluginBuilder;
 import io.github.kitarek.elasthttpd.server.HttpServer;
 import io.github.kitarek.elasthttpd.server.SimpleHttpServer;
 import io.github.kitarek.elasthttpd.server.consumers.HttpRequestConsumer;
@@ -57,6 +58,13 @@ public class FluentElastHttpDBuilder implements ElastHttpDBuilder {
 
 	public ElastHttpDBuilder customRequestConsumer(HttpRequestConsumer customhttpRequestConsumer) {
 		this.customHttpRequestConsumer = notNull(customhttpRequestConsumer, "The custom HTTP request consumer cannot be null");
+		return this;
+	}
+
+	public ElastHttpDBuilder consumeRequestsWithPlugin(ConsumerPluginBuilder consumerPluginBuilder) {
+		this.customHttpRequestConsumer = notNull(
+				notNull(consumerPluginBuilder, "Consumer Plugin Builder must be not null").build(),
+				"HttpRequestConsumer instance built by Customer Plugin Builder must be not null");
 		return this;
 	}
 

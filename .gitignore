@@ -14,3 +14,6 @@ gradle-app.setting
 *.iml
 *.ipr
 *.iws
+
+# Root for ElastHttpD demo fileserver
+sandbox/

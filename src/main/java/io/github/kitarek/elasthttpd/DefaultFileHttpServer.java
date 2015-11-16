@@ -20,14 +20,24 @@ package io.github.kitarek.elasthttpd;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.github.kitarek.elasthttpd.plugins.consumers.file.FileServerPluginBuilder.currentDirectory;
+import static io.github.kitarek.elasthttpd.plugins.consumers.file.FileServerPluginBuilder.fileServer;
 import static io.github.kitarek.elasthttpd.server.networking.NetworkConfigurationBuilder.DEFAULT_IPV4_LOOPBACK_LISTEN_ADDRESS;
 import static io.github.kitarek.elasthttpd.server.networking.NetworkConfigurationBuilder.DEFAULT_LISTEN_PORT;
 
-public class DefaultHttpServer {
-	public static final Logger LOGGER = LoggerFactory.getLogger(DefaultHttpServer.class);
+public class DefaultFileHttpServer {
+
+	public static final Logger LOGGER = LoggerFactory.getLogger(DefaultFileHttpServer.class);
 	public static void main(String[] args) {
-		LOGGER.info(String.format("Starting dummy webserver listening on http://%s:%s",
-				DEFAULT_IPV4_LOOPBACK_LISTEN_ADDRESS.getHostName(), DEFAULT_LISTEN_PORT));
-		ElastHttpD.startBuilding().run();
+		LOGGER.info(String.format("Starting webserver with fileServer plugin for: %s listening on http://%s:%s",
+				currentDirectory(), DEFAULT_IPV4_LOOPBACK_LISTEN_ADDRESS.getHostName(), DEFAULT_LISTEN_PORT));
+		ElastHttpD
+				.startBuilding()
+				.consumeRequestsWithPlugin(
+						fileServer()
+								.withRootServerDirectory(currentDirectory())
+								.serveSubresourceWhenDirectoryRequested("demo.html")
+				)
+				.run();
 	}
 }

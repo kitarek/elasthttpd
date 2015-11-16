@@ -15,24 +15,23 @@
  *
  */
 
-package io.github.kitarek.elasthttpd.model;
+package io.github.kitarek.elasthttpd.plugins.consumers.file.consumer.directory;
+
+
+import io.github.kitarek.elasthttpd.plugins.consumers.file.request.HttpFileRequest;
+
+import java.io.File;
 
 /**
- * Type of the HttpMethod
+ * Consumes requests that maps to directories for locally mapped filesystems.
  */
-public enum HttpMethodType {
-	/**
-	 * General purpose method not requiring any special encoding or message body in request
-	 */
-	COMMON,
+public interface HttpDirectoryRequestConsumer {
 
 	/**
-	 * The method most likely points to use encoded body entity to send additional data
+	 * Consume directory request
+	 *
+	 * @param fileRequest not null
+	 * @param requestedDirectory locally mapped and existing directory
 	 */
-	ENTITY_ENCODING,
-
-	/**
-	 * Specialized method most likely not requiring any additional in request
-	 */
-	SPECIAL
+	void serveExistingDirectoryElement(HttpFileRequest fileRequest, File requestedDirectory);
 }

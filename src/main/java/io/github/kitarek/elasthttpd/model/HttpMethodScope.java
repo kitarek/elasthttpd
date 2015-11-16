@@ -17,7 +17,25 @@
 
 package io.github.kitarek.elasthttpd.model;
 
-
+/**
+ * Each HTTP request method by its nature can or cannot modify the server status. That property is called scope.
+ * For each method there is a contract that on can cause side effects (modify server state) or cannot.
+ *
+ * For some methods it can depend on different things and basically we don't know what the method scope is
+ */
 public enum HttpMethodScope {
-	CAUSES_SIDE_EFFECT, WITHOUT_SIDE_EFFECT, UNKNOWN
+	/**
+	 * Most likely method affects server state, however surely not for each request
+	 */
+	CAUSES_SIDE_EFFECT,
+
+	/**
+	 * This method cannot modify server state for any request whatever its parameters are given
+	 */
+	WITHOUT_SIDE_EFFECT,
+
+	/**
+	 * In general scope is uknown so it's better in general that it can cause side effects (which may not happen at all)
+	 */
+	UNKNOWN
 }

@@ -17,6 +17,7 @@
 
 package io.github.kitarek.elasthttpd;
 
+import io.github.kitarek.elasthttpd.plugins.consumers.ConsumerPluginBuilder;
 import io.github.kitarek.elasthttpd.server.HttpServer;
 import io.github.kitarek.elasthttpd.server.consumers.HttpRequestConsumer;
 import io.github.kitarek.elasthttpd.server.networking.NetworkConfigurationBuilder;
@@ -57,6 +58,16 @@ public interface ElastHttpDBuilder {
 	 * @return the current builder for chaining other methods
 	 */
 	ElastHttpDBuilder customRequestConsumer(HttpRequestConsumer customhttpRequestConsumer);
+
+
+	/**
+	 * Use builder for request consumer plugin in preconfigured state to set main server request consumer.
+	 *
+	 * @param consumerPluginBuilder a preconfigured not-null instance of consumer plugin builder
+	 *
+	 * @return the current builder for chaining other methods
+	 */
+	ElastHttpDBuilder consumeRequestsWithPlugin(ConsumerPluginBuilder consumerPluginBuilder);
 
 	/**
 	 * Allows to configure number of threads and connections that can run in parallel different requests. Please
