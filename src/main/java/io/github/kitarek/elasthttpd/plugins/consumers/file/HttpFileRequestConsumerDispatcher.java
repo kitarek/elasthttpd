@@ -32,6 +32,10 @@ import org.apache.http.HttpStatus;
 import static org.apache.commons.lang3.Validate.notNull;
 import static org.apache.http.HttpStatus.SC_NOT_IMPLEMENTED;
 
+/**
+ * The basic FileServer plugin request consumer that dispatches the work to specialized consumer selected by
+ * HTTP request attributes like HTTP method.
+ */
 class HttpFileRequestConsumerDispatcher implements HttpRequestConsumer {
 
 	private final HttpFileRequestFactory fileRequestFactory;

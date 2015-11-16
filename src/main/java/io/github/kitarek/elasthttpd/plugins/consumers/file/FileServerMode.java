@@ -17,6 +17,9 @@
 
 package io.github.kitarek.elasthttpd.plugins.consumers.file;
 
+/**
+ * Describes the basic capabilities of file server plugin instance
+ */
 public enum FileServerMode {
 	/**
 	 * Allows only to read/download files but the filesystem state cannot be changed.

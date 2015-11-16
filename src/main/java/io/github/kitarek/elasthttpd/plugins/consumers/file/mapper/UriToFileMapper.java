@@ -30,7 +30,9 @@ import java.nio.file.Paths;
 import static org.apache.commons.lang3.StringUtils.*;
 import static org.apache.commons.lang3.Validate.*;
 
-
+/**
+ * Maps server URIs to local filesystem using one directory as base root path for mapping all resources.
+ */
 public class UriToFileMapper {
 
 	public static final Logger LOGGER = LoggerFactory.getLogger(UriToFileMapper.class);

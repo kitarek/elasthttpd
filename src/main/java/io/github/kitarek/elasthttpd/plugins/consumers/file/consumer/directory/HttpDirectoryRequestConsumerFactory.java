@@ -22,19 +22,43 @@ import io.github.kitarek.elasthttpd.plugins.consumers.file.producer.HttpFileProd
 
 import static org.apache.commons.lang3.Validate.notNull;
 
+/**
+ * Create different strategies for serving
+ */
 public class HttpDirectoryRequestConsumerFactory {
 	private final TemplatedHttpResponder templatedHttpResponder;
 	private final HttpFileProducer httpFileProducer;
 
+	/**
+	 * Create factory with dependencies
+	 *
+	 * @param templatedHttpResponder not null
+	 * @param httpFileProducer not null
+	 */
 	public HttpDirectoryRequestConsumerFactory(TemplatedHttpResponder templatedHttpResponder, HttpFileProducer httpFileProducer) {
 		this.templatedHttpResponder = notNull(templatedHttpResponder);
 		this.httpFileProducer = notNull(httpFileProducer);
 	}
 
+	/**
+	 * Create {@link ForbiddenDirectoryRequestConsumer} instance.
+	 *
+	 * @return always not null
+	 */
 	public HttpDirectoryRequestConsumer createConsumerThatForbidsAccessToDirectories() {
 		return new ForbiddenDirectoryRequestConsumer(templatedHttpResponder);
 	}
 
+	/**
+	 * Create {@link DirectorySubResourceRequestConsumer} instance. The subresource will be used for mapping directories
+	 * to another request path (rather subpaths). This allows to serve certain files with specified resource by default
+	 * for resource collections.
+
+	 * @param subresource not null resource path element or sub path element in form of a/b/c that will be added to
+	 *                    originally requested resource collection path. You can use {@code ..} symbolic directory
+	 *                    to access resources one level up however it's not recomended.
+	 * @return always not null
+	 */
 	public HttpDirectoryRequestConsumer createConsumerThatAllowsToAccessSubResourceForDirectories(String subresource) {
 		return new DirectorySubResourceRequestConsumer(httpFileProducer, templatedHttpResponder,
 				notNull(subresource, "Subresource for directories cannot be null"));

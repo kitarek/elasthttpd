@@ -26,8 +26,17 @@ import static org.apache.commons.lang3.Validate.notNull;
 import static org.apache.http.HttpStatus.*;
 import static org.apache.http.util.EncodingUtils.getAsciiBytes;
 
+/**
+ * Allows to use response templates (using text/plain encoding) for typical HTTP statuses.
+ */
 public class TemplatedHttpResponder {
 
+	/**
+	 * Setup INTERNAL SERVER ERROR HttpResponse with a given text/plain message send as response body.
+	 *
+	 * @param response not-null
+	 * @param message not-null
+	 */
 	public void respondWithInternalServerError(HttpResponse response, String message) {
 		validateResponseAndMessage(response, message);
 		response.setStatusCode(SC_INTERNAL_SERVER_ERROR);
@@ -35,6 +44,13 @@ public class TemplatedHttpResponder {
 		setupAsciiUsStringAsResponseEntity(response, message);
 	}
 
+	/**
+	 * Setup NOT FOUND response for a given HttpResponse. The specified message will be used as
+	 * response body content (text/plain).
+	 *
+	 * @param response not null
+	 * @param message not null
+	 */
 	public void respondWithResourceNotFound(HttpResponse response, String message) {
 		validateResponseAndMessage(response, message);
 		response.setStatusCode(SC_NOT_FOUND);
@@ -42,6 +58,13 @@ public class TemplatedHttpResponder {
 		setupAsciiUsStringAsResponseEntity(response, message);
 	}
 
+	/**
+	 * Setup FORBIDDEN response for a given HttpResponse. The specified message will be used as
+	 * response body content (text/plain).
+	 *
+	 * @param response not null
+	 * @param message not null
+	 */
 	public void respondWithResourceForbidden(HttpResponse response, String message) {
 		validateResponseAndMessage(response, message);
 		response.setStatusCode(SC_FORBIDDEN);
@@ -49,6 +72,11 @@ public class TemplatedHttpResponder {
 		setupAsciiUsStringAsResponseEntity(response, message);
 	}
 
+	/**
+	 * Setup 204 (no content) DELETED response for a given HttpResponse.
+	 *
+	 * @param response not null
+	 */
 	public void respondWithNoContentAndReasonDeleted(HttpResponse response) {
 		response.setStatusCode(SC_NO_CONTENT);
 		response.setReasonPhrase("DELETED");
@@ -64,7 +92,12 @@ public class TemplatedHttpResponder {
 				ContentType.create("text/plain", "US-ASCII")));
 	}
 
+	/**
+	 * Setup CREATED HTTP status code for a given HttpResponse. Response body is not allowed hence any message cannot
+	 * be passed here.
 
+	 * @param response not null
+	 */
 	public void respondThatResourceIsCreated(HttpResponse response) {
 		response.setStatusCode(SC_CREATED);
 		response.setReasonPhrase("CREATED");

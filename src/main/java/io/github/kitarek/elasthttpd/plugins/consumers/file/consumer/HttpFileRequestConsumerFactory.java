@@ -20,9 +20,13 @@ package io.github.kitarek.elasthttpd.plugins.consumers.file.consumer;
 import io.github.kitarek.elasthttpd.commons.TemplatedHttpResponder;
 import io.github.kitarek.elasthttpd.plugins.consumers.file.consumer.directory.HttpDirectoryRequestConsumer;
 import io.github.kitarek.elasthttpd.plugins.consumers.file.producer.HttpFileProducer;
+import io.github.kitarek.elasthttpd.plugins.consumers.file.request.HttpFileRequest;
 
 import static org.apache.commons.lang3.Validate.notNull;
 
+/**
+ * Creates different {@link HttpFileRequest} consumers.
+ */
 public class HttpFileRequestConsumerFactory {
 
 	private final TemplatedHttpResponder templatedHttpResponder;

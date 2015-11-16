@@ -28,10 +28,20 @@ import java.nio.file.Paths;
 import static io.github.kitarek.elasthttpd.commons.Optional.empty;
 import static io.github.kitarek.elasthttpd.commons.Optional.optional;
 
+/**
+ * Encapsulates MIME type detection for an existing file.
+ */
 public class MimeTypeDetector {
 
 	public static final Logger LOGGER = LoggerFactory.getLogger(MimeTypeDetector.class);
 
+	/**
+	 * Detect MIME type of the existing local file/directoru (filesystem object). If file does not exist the MIME type
+	 * string won't be present. If it was unable to detect MIME-type of file or directory the string won't be present.
+	 *
+	 * @param localFile not-null reference to a file
+	 * @return optional string object for which you need to explicitly check if it is present.
+	 */
 	public Optional<String> detectMimeContentType(File localFile) {
 		Optional<String> optionalContentType;
 		try {

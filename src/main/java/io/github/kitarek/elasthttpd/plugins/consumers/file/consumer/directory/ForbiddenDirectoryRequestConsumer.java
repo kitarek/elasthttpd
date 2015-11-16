@@ -26,6 +26,10 @@ import java.io.File;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.Validate.notNull;
 
+/**
+ * Strategy that allows to respond with HTTP FORBIDDEN status for each resource collection (the resource path that is
+ * mapped to directory locally).
+ */
 public class ForbiddenDirectoryRequestConsumer implements HttpDirectoryRequestConsumer {
 
 	private final TemplatedHttpResponder templatedHttpResponder;

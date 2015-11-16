@@ -22,9 +22,28 @@ import io.github.kitarek.elasthttpd.plugins.consumers.file.mapper.UriToFileMappe
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 
+/**
+ * Represents requests directed to FileServer plugin
+ */
 public interface HttpFileRequest {
 
+	/**
+	 * Original HTTP request of this file request
+	 *
+	 * @return not null
+	 */
 	HttpRequest request();
+
+	/**
+	 * Original HTTP response of this file request
+	 * @return not null
+	 */
 	HttpResponse response();
+
+	/**
+	 * Mapper to determine the exact local file object pointed by i.e. HTTP request URL.
+	 *
+	 * @return not null
+	 */
 	UriToFileMapper mapper();
 }

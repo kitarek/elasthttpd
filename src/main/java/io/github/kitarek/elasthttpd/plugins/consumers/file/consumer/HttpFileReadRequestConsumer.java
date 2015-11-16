@@ -27,12 +27,24 @@ import java.io.File;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.Validate.notNull;
 
+/**
+ * General purpose request consumer that reads local file object (file or directory) mapped by URI and tries to send it
+ * via HTTP in response. In case of directories dedicated directory consumer will be used.
+ */
 class HttpFileReadRequestConsumer implements HttpFileRequestConsumer {
 
 	private final HttpFileProducer httpFileProducer;
 	private final TemplatedHttpResponder templatedHttpResponder;
 	private final HttpDirectoryRequestConsumer directoryRequestConsumer;
 
+	/**
+	 * Create instance
+	 *
+	 * @param httpFileProducer not-null
+	 * @param templatedHttpResponder not-null
+	 * @param directoryRequestConsumer the strategy used for consuming directories to which consumption will be delegated
+	 *                                 in case of mapping resource to a directory
+	 */
 	public HttpFileReadRequestConsumer(HttpFileProducer httpFileProducer,
 									   TemplatedHttpResponder templatedHttpResponder,
 									   HttpDirectoryRequestConsumer directoryRequestConsumer) {

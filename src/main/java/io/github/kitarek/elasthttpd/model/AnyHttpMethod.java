@@ -17,10 +17,31 @@
 
 package io.github.kitarek.elasthttpd.model;
 
-
+/**
+ * Represents RFC2616-related HTTP method or completely additional one that can be used as extension for HTTP procotol.
+ *
+ * @link https://tools.ietf.org/html/rfc2616#section-5.1.1
+ */
 public interface AnyHttpMethod {
 
+	/**
+	 * Returns the general scope of the method. The scope described what can be affected if one request is sent
+	 * with the following method. In example if scope is one request then only one current response of that request
+	 * is affected.
+	 *
+	 * However if the scope is bigger than in general that method causes side effects and indirectly changes states
+	 * and responses of other methods.
+	 *
+	 * @return the one from enumeration of method scope (always not null)
+	 */
 	HttpMethodScope getScope();
+
+	/**
+	 * Describes the type of HTTP method. Some HTTP methods and requests uses those methods can supply additional
+	 * information or could have special meaning. Refer to: {@link HttpMethodType} for more details.
+	 *
+	 * @return the one from enumeration of method type (always not null)
+	 */
 	HttpMethodType getType();
 
 	/**

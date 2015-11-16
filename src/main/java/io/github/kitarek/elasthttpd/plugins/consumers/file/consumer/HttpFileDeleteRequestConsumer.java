@@ -25,6 +25,9 @@ import java.io.File;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.Validate.notNull;
 
+/**
+ * Request consumer that deletes local file mapped by specified URI.
+ */
 public class HttpFileDeleteRequestConsumer implements HttpFileRequestConsumer {
 
 	private final TemplatedHttpResponder templatedHttpResponder;

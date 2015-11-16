@@ -26,12 +26,30 @@ import java.io.File;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.Validate.notNull;
 
+/**
+ * Strategy that allows for directories to serve specified resource that is always located relatively under
+ * the directory resource requested by HTTP client.
+ *
+ * The current implementation does not enforce server base path limitation so please be aware if you use '..'
+ * as subresource.
+ */
 public class DirectorySubResourceRequestConsumer implements HttpDirectoryRequestConsumer {
 
 	private final HttpFileProducer producer;
 	private final TemplatedHttpResponder responder;
 	private final String subResourceToServe;
 
+	/**
+	 * Create strategy with the following dependencies
+	 *
+	 * @param producer not-null
+	 * @param responder not-null
+	 * @param subResourceToServe not-null string that represents either one level in resource path or
+	 *                           part of resource path that will be appended to the requested resource directory
+	 *                           (collection). The latter requires to separate each level with request path level
+	 *                           separator '/'. Usage of '..' special directory symbol is permitted however not
+	 *                           recommended.
+	 */
 	public DirectorySubResourceRequestConsumer(HttpFileProducer producer,
 											   TemplatedHttpResponder responder,
 											   String subResourceToServe) {

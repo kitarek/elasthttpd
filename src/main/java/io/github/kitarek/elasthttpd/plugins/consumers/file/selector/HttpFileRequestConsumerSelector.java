@@ -31,6 +31,9 @@ import static io.github.kitarek.elasthttpd.model.HttpMethod.*;
 import static io.github.kitarek.elasthttpd.plugins.consumers.file.FileServerMode.READ_AND_WRITE;
 import static org.apache.commons.lang3.Validate.notNull;
 
+/**
+ * Allows to select correct {@link HttpFileRequestConsumer} for a specified HTP method.
+ */
 public class HttpFileRequestConsumerSelector {
 
 	private final Map<AnyHttpMethod, HttpFileRequestConsumer> methodToConsumerMap;
@@ -64,6 +67,13 @@ public class HttpFileRequestConsumerSelector {
 		methodToConsumerMap.put(HEAD, consumerForReadOperation);
 	}
 
+	/**
+	 * Gets the hardcoded consumer type based on requested HTTP method (any available). Non standard methods are
+	 * allowed too.
+	 *
+	 * @param anyHttpMethod
+	 * @return optional reference to selected consumer (reference is present if method was registered with any consumer)
+	 */
 	public Optional<HttpFileRequestConsumer> selectConsumer(AnyHttpMethod anyHttpMethod) {
 		return optional(methodToConsumerMap.get(anyHttpMethod));
 	}

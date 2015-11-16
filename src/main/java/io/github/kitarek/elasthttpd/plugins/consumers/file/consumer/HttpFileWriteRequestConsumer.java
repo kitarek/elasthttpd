@@ -34,6 +34,13 @@ import java.io.OutputStream;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.Validate.notNull;
 
+/**
+ * Consumer that is able to write one file send in HTTP request body and declared as octet-stream.
+ * The current implementation tries to write a file as soon as possible without any checksum verification into
+ * destination place.
+ *
+ * Currently no respnse body is sent to client with the URL of created resource.
+ */
 public class HttpFileWriteRequestConsumer implements HttpFileRequestConsumer {
 
 	public static final Logger LOGGER = LoggerFactory.getLogger(HttpFileWriteRequestConsumer.class);

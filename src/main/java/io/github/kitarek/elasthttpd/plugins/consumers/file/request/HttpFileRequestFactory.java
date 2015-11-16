@@ -24,14 +24,29 @@ import org.apache.http.HttpResponse;
 
 import static org.apache.commons.lang3.Validate.notNull;
 
+/**
+ * Create HTTP file request objects.
+ */
 public class HttpFileRequestFactory {
 
 	private final UriToFileMapper mapper;
 
+	/**
+	 * Create the instance of mapper thay will map to resources only under the specified root directory path.
+	 *
+	 * @param rootDirectoryPath not null path to local directory
+	 */
 	public HttpFileRequestFactory(final String rootDirectoryPath) {
 		this.mapper = new UriToFileMapper(notNull(rootDirectoryPath, "Root directory path cannot be null"));
 	}
 
+	/**
+	 * Create new file request object based on new HTTP request and response.
+	 *
+	 * @param request not null
+	 * @param response not null
+	 * @return not null
+	 */
 	public HttpFileRequest createNew(HttpRequest request, HttpResponse response) {
 		return new ImmutableHttpFileRequest(notNull(request, "HTTP request cannot be null"),
 				notNull(response, "HTTP response cannot be null"), mapper);

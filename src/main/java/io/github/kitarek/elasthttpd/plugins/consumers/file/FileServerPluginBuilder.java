@@ -49,15 +49,33 @@ public class FileServerPluginBuilder implements ConsumerPluginBuilder {
 	private FileServerPluginBuilder() {
 	}
 
+	/**
+	 * FileServer plugin builder entry point.
+	 *
+	 * @return not null builder instance
+	 */
 	public static FileServerPluginBuilder fileServer() {
 		return new FileServerPluginBuilder();
 	}
 
+	/**
+	 * The helper method that is used to mark symbolically currently used directory. Use it if you would like to have
+	 * relative root directory / of that server to server runtime directory.
+	 *
+	 * @return not null current working directory
+	 */
 	public static String currentDirectory() {
 		Path currentRelativePath = Paths.get("");
 		return currentRelativePath.toAbsolutePath().toString();
 	}
 
+	/**
+	 * Define local server root directory that will be used to map '/' root resource URI. Any file outside
+	 * of that directory will be not available to access in normal circumstances for that instance
+	 *
+	 * @param rootServerDirectory directory that will be mapped to '/' URL.
+	 * @return this builder
+	 */
 	public FileServerPluginBuilder withRootServerDirectory(String rootServerDirectory) {
 		notNull(rootServerDirectory, "Root server directory must be not null");
 		root = new File(rootServerDirectory);
@@ -66,6 +84,12 @@ public class FileServerPluginBuilder implements ConsumerPluginBuilder {
 		return this;
 	}
 
+	/**
+	 * Define the created filserver plugin instance capabilities.
+	 *
+	 * @param mode one of the available capabilities set (not null)
+	 * @return this builder
+	 */
 	public FileServerPluginBuilder allowFileOperations(FileServerMode mode) {
 		fileServerMode = notNull(mode, "FileServerMode must be not null");
 		return this;
@@ -73,6 +97,7 @@ public class FileServerPluginBuilder implements ConsumerPluginBuilder {
 
 	/**
 	 * Respond with error when serving directory-related resources
+	 * @return this builder
 	 */
 	public FileServerPluginBuilder forbidsAccessToDirectories() {
 		httpDirectoryRequestConsumer = new ForbiddenDirectoryRequestConsumer(templatedHttpResponder);
@@ -81,6 +106,11 @@ public class FileServerPluginBuilder implements ConsumerPluginBuilder {
 
 	/**
 	 * Use predefined sub-resource of that directory for resource resolution
+	 *
+	 * @param subresource the default resource under the served resource that will be used instead to produce
+	 *                    HTTP response
+	 * @return this builder
+	 *
 	 */
 	public FileServerPluginBuilder serveSubresourceWhenDirectoryRequested(String subresource) {
 		notNull(subresource, "Subresource must be not null");
