@@ -17,6 +17,7 @@
 
 package io.github.kitarek.elasthttpd.plugins.consumers.file.mapper;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,6 +39,7 @@ public class UriToFileMapper {
 	public static final Logger LOGGER = LoggerFactory.getLogger(UriToFileMapper.class);
 	public static final String ROOT_URI_REQUEST_PATH = "/";
 	public static final String RESOURCE_PATH_SEPARATOR = "/";
+	public static final String QUERY_STRING_REQUEST_PATH_SEPARATOR = "?";
 	private final String pathToMappedRootDirectory;
 
 	public UriToFileMapper(String pathToMappedRootDirectory) {
@@ -66,7 +68,11 @@ public class UriToFileMapper {
 
 	public String mapUriRequestPath(String uriRequestPath) {
 		isTrue(isCorrectUriRequestPath(uriRequestPath), "URI request path is not correct");
-		return removeEnd(pathToMappedRootDirectory + normalizeUrlRequestPath(uriRequestPath), RESOURCE_PATH_SEPARATOR);
+		return removeEnd(pathToMappedRootDirectory + getNormalizedUriRequestPathWithoutQueryString(uriRequestPath), RESOURCE_PATH_SEPARATOR);
+	}
+
+	public String getNormalizedUriRequestPathWithoutQueryString(String uriRequestPath) {
+		return normalizeUrlRequestPath(StringUtils.substringBefore(uriRequestPath, QUERY_STRING_REQUEST_PATH_SEPARATOR));
 	}
 
 	private String normalizeUrlRequestPath(String uriRequestPath) {

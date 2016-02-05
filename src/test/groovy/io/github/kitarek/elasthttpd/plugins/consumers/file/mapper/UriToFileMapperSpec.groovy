@@ -173,7 +173,6 @@ class UriToFileMapperSpec extends Specification {
 			'/src/a/b/c%20'  | validExistingDirectory() | validExistingDirectory() + "/src/a/b/c "
 			'/src%21'        | validExistingDirectory() | validExistingDirectory() + "/src!"
 			'/src%2B'        | validExistingDirectory() | validExistingDirectory() + "/src+"
-
 	}
 
 	@Unroll("Maps specified relative URI request path: #requestedPath appropriatly always under rootDirectory")
@@ -197,6 +196,27 @@ class UriToFileMapperSpec extends Specification {
 			'/../src/../a/../b/c%2FD'  | validExistingDirectory() | validExistingDirectory() + "/b/c/D"
 			'/../src/../a/../b/c%2F'   | validExistingDirectory() | validExistingDirectory() + "/b/c"
 			'/../src/../a/../b/c%2C'   | validExistingDirectory() | validExistingDirectory() + "/b/c,"
+	}
+
+
+	@Unroll("Maps specified URI request path that contains query string: #requestedPath without applying query string as subpath of rootDirectory")
+	def 'Maps specified URI request path that contains query string without applying the query string part in subpath of rootDirectory'() {
+		given:
+			def UriToFileMapper mapper = new UriToFileMapper(root)
+
+		when:
+			def actualAbsoluteFilePath = mapper.mapUriRequestPath(requestedPath)
+
+		then:
+			actualAbsoluteFilePath == expectedMappedFilePath
+
+		where:
+			requestedPath            | root                     | expectedMappedFilePath
+			'/src?a=b'               | validExistingDirectory() | validExistingDirectory() + "/src"
+			'/src/a/b/c%20?c=d'      | validExistingDirectory() | validExistingDirectory() + "/src/a/b/c "
+			'/src/a/b/c%20?e=f&g=f'  | validExistingDirectory() | validExistingDirectory() + "/src/a/b/c "
+			'/src%21?d=f&j=k'        | validExistingDirectory() | validExistingDirectory() + "/src!"
+			'/src%2B?'               | validExistingDirectory() | validExistingDirectory() + "/src+"
 	}
 
 	@Shared
